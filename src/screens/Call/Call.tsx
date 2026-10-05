@@ -4,7 +4,8 @@ import { Buddy } from '../../components/Buddy/Buddy'
 import { PhoneIcon } from '../../components/Icons'
 import { useCallTimer, useLiveCall } from '../../hooks/useLiveCall'
 import { currentLesson } from '../../lib/course'
-import { formatTimer } from '../../lib/format'
+import { WordText } from '../../components/WordText/WordText'
+import { formatTimer, plural } from '../../lib/format'
 import { levelLabel } from '../../lib/levels'
 import type { CallError } from '../../lib/live/liveCall'
 import { pathAfterOnboarding } from '../../state/auth'
@@ -103,7 +104,27 @@ export function Call() {
       <div className={styles.endPage}>
         <Buddy state="waving" size={220} />
         <h1>Nice call!</h1>
-        <p className="soft">You talked for {Math.max(1, Math.round(seconds / 60))} min.</p>
+        <p className="soft">
+          You talked for {Math.max(1, Math.round(seconds / 60))} min
+          {call.sessionWords.length > 0 ? ` and practised ${plural(call.sessionWords.length, 'word', 'words')}` : ''}.
+        </p>
+        {call.lessonDone && <p className={styles.done}>✓ Lesson done: {call.lessonDone}</p>}
+        {call.sessionWords.length > 0 && (
+          <section className={styles.recap} aria-labelledby="recap-title">
+            <h2 id="recap-title" className="section-title">
+              From today
+            </h2>
+            <ul>
+              {call.sessionWords.map((w) => (
+                <li key={w.id}>
+                  <WordText word={w} lang={profile.targetLanguage} showRomaji={profile.showRomaji} />
+                  <span className="soft">{w.translation}</span>
+                </li>
+              ))}
+            </ul>
+            <p className="soft">They’ll come back for review on later calls and in Words.</p>
+          </section>
+        )}
         <button type="button" className="btn btn-primary btn-block" onClick={leave}>
           Back home
         </button>
@@ -161,7 +182,12 @@ export function Call() {
             <span className={styles.translation}>Saved</span>
           </section>
         )}
-        {/* Word card returns in phase 6, when Buddy can call save_word. */}
+        {call.sessionWords[0] && (
+          <section className={styles.wordCard} aria-live="polite" aria-label="Latest word">
+            <WordText word={call.sessionWords[0]} lang={profile.targetLanguage} showRomaji={profile.showRomaji} />
+            <span className={styles.translation}>{call.sessionWords[0].translation}</span>
+          </section>
+        )}
         <button type="button" className={styles.end} onClick={endCall}>
           <PhoneIcon size={30} />
           End call

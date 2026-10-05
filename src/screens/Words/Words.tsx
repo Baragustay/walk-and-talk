@@ -1,13 +1,13 @@
 import { Link } from 'react-router'
 import { WordText } from '../../components/WordText/WordText'
-import { dueWords, MOCK_WORDS } from '../../mock/data'
 import { useProfile } from '../../state/profile'
+import { dueWords, useWords } from '../../state/words'
 import type { Word } from '../../types'
 import styles from './Words.module.css'
 
 export function Words() {
   const profile = useProfile()
-  const words = MOCK_WORDS[profile.targetLanguage]
+  const words = useWords(profile.targetLanguage)
   const due = dueWords(words)
   const all = [...words].sort((a, b) => b.createdAt - a.createdAt)
 
@@ -42,7 +42,11 @@ export function Words() {
         <h2 id="all-title" className="section-title">
           All words
         </h2>
-        <ul className={styles.list}>{all.map(row)}</ul>
+        {all.length > 0 ? (
+          <ul className={styles.list}>{all.map(row)}</ul>
+        ) : (
+          <p className="soft">No words yet. Buddy saves the words you learn during your calls.</p>
+        )}
       </section>
     </div>
   )

@@ -45,6 +45,37 @@ export const COMPLETE_LESSON: FunctionDeclaration = {
   },
 }
 
+export const SAVE_WORD: FunctionDeclaration = {
+  name: 'save_word',
+  description: 'Save a word or short phrase you taught, they asked about, or they keep getting wrong. It goes to their word list and comes back for review.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      word: { type: Type.STRING, description: 'In the target language, as normally written.' },
+      translation: { type: Type.STRING, description: "Meaning in the user's mother tongue." },
+      example: { type: Type.STRING, description: 'A short example sentence in the target language.' },
+      reason: { type: Type.STRING, enum: ['taught', 'asked', 'repeated_mistake'] },
+      kana: { type: Type.STRING, description: 'Japanese only: reading in kana.' },
+      kanji: { type: Type.STRING, description: 'Japanese only: kanji spelling, if any.' },
+      romaji: { type: Type.STRING, description: 'Japanese only: romaji.' },
+    },
+    required: ['word', 'translation', 'reason'],
+  },
+}
+
+export const MARK_RECALL: FunctionDeclaration = {
+  name: 'mark_recall',
+  description: 'After practising one of the review words: did they remember it?',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      word: { type: Type.STRING, description: 'The review word, exactly as listed.' },
+      remembered: { type: Type.BOOLEAN },
+    },
+    required: ['word', 'remembered'],
+  },
+}
+
 export const MAX_STYLE_ITEMS = 8
 
 export const UPDATE_LEARNING_STYLE: FunctionDeclaration = {

@@ -4,8 +4,8 @@ import { Buddy } from '../../components/Buddy/Buddy'
 import { CloseIcon, SpeakerIcon } from '../../components/Icons'
 import { WordText } from '../../components/WordText/WordText'
 import { canSpeak, speak } from '../../lib/speak'
-import { dueWords, MOCK_WORDS } from '../../mock/data'
 import { useProfile } from '../../state/profile'
+import { dueWords, getWords, reviewWord } from '../../state/words'
 import styles from './Words.module.css'
 
 export function Flashcards() {
@@ -13,7 +13,7 @@ export function Flashcards() {
   const profile = useProfile()
   const lang = profile.targetLanguage
   // Snapshot the due list once, so answering doesn't reshuffle the deck.
-  const [deck] = useState(() => dueWords(MOCK_WORDS[lang]))
+  const [deck] = useState(() => dueWords(getWords(lang)))
   const [index, setIndex] = useState(0)
   const [flipped, setFlipped] = useState(false)
   const [lastAnswer, setLastAnswer] = useState<'got' | 'missed' | null>(null)
@@ -22,7 +22,7 @@ export function Flashcards() {
   const word = deck[index]
 
   const answer = (got: boolean) => {
-    // Phase 3: update the SRS schedule here.
+    reviewWord(word.id, got)
     setLastAnswer(got ? 'got' : 'missed')
     setFlipped(false)
     setIndex((i) => i + 1)

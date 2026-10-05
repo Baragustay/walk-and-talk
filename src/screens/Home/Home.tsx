@@ -6,9 +6,9 @@ import { CameraIcon, CloseIcon, PhoneIcon } from '../../components/Icons'
 import { currentLesson } from '../../lib/course'
 import { plural } from '../../lib/format'
 import { TOPICS } from '../../lib/topics'
-import { dueWords, MOCK_WORDS } from '../../mock/data'
 import { setPhoto, setTopic, useCallSetup } from '../../state/callSetup'
 import { useProfile } from '../../state/profile'
+import { dueWords, useWords } from '../../state/words'
 import styles from './Home.module.css'
 
 export function Home() {
@@ -18,7 +18,7 @@ export function Home() {
   const fileInput = useRef<HTMLInputElement>(null)
   const topicsLabel = useId()
   const lesson = currentLesson(profile)
-  const due = dueWords(MOCK_WORDS[profile.targetLanguage]).length
+  const due = dueWords(useWords(profile.targetLanguage)).length
 
   return (
     <div className="screen">

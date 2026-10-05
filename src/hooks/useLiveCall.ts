@@ -12,6 +12,8 @@ import { completeLesson, courseFor, currentLesson, progressFromPlacement } from 
 import {
   COMPLETE_LESSON,
   HANG_UP,
+  MARK_RECALL,
+  SAVE_WORD,
   parseLearningStyle,
   parseSetLevel,
   SET_LEVEL,
@@ -20,7 +22,9 @@ import {
 } from '../lib/live/tools'
 import { accessToken } from '../state/auth'
 import { getProfile, updateProfile } from '../state/profile'
-import type { Level, Profile } from '../types'
+import { recordWalk, useWalks } from '../state/walks'
+import { dueWords, findWord, getWords, reviewWord, saveWord } from '../state/words'
+import type { Level, Profile, Word } from '../types'
 
 const INITIAL: CallSnapshot = {
   status: 'connecting',
@@ -40,6 +44,10 @@ const LEVEL_CUE_AGAIN_AT = 6.5 * 60 // if it still hasn't set a level
 export function useLiveCall(profile: Profile, isLevelCall: boolean) {
   const [snap, setSnap] = useState<CallSnapshot>(INITIAL)
   const [levelResult, setLevelResult] = useState<{ level: Level; note: string } | null>(null)
+  /** Words saved or completed during this call, newest first: for the word card and the recap. */
+  const [sessionWords, setSessionWords] = useState<Word[]>([])
+  const [lessonDone, setLessonDone] = useState<string | null>(null)
+  const walks = useWalks()
   const call = useRef<LiveCall | null>(null)
 
   useEffect(() => {
@@ -53,8 +61,8 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       levelNote: isLevelCall ? '' : profile.levelNote,
       learningStyle: profile.learningStyle,
       // TODO(phase 2): real walk count and due words from Dexie. No fake words until then.
-      walkCount: 1,
-      dueWords: [],
+      walkCount: walks.length + 1,
+      dueWords: isLevelCall ? [] : dueWords(getWords(profile.targetLanguage)).slice(0, 3),
       topicNotes: 'Free talk. Follow whatever the user wants to talk about.',
       walkMinutes: isLevelCall ? 5 : profile.walkMinutes,
       lesson,
@@ -82,8 +90,47 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       if (name === 'complete_lesson') {
         // Read the latest profile: other tools may have changed it during the call.
         const progress = completeLesson(getProfile(), String(args?.lesson_id ?? ''))
-        if (!progress) return { error: "That isn't today's lesson id." }
+        if (!progress || !lesson) return { error: "That isn't today's lesson id." }
         updateProfile({ courseProgress: progress })
+        // The lesson's phrases become words for review on later calls.
+        const saved = lesson.lesson.phrases.map((p) =>
+          saveWord({
+            targetLanguage: profile.targetLanguage,
+            target: p.target,
+            translation: p.meaning,
+            reason: 'taught',
+            kana: p.kana,
+            romaji: p.romaji,
+            kanji: p.kana && p.kana !== p.target ? p.target : undefined,
+          }),
+        )
+        setSessionWords((ws) => [...saved.filter((w) => !ws.some((x) => x.id === w.id)).reverse(), ...ws])
+        setLessonDone(lesson.lesson.title)
+        return { saved: true, words_saved: saved.length }
+      }
+      if (name === 'save_word') {
+        const target = String(args?.word ?? '').trim()
+        const translation = String(args?.translation ?? '').trim()
+        if (!target || !translation) return { error: 'word and translation are required' }
+        const reason = ['taught', 'asked', 'repeated_mistake'].includes(String(args?.reason)) ? (args!.reason as Word['reason']) : 'taught'
+        const opt = (k: string) => (args?.[k] ? String(args[k]) : undefined)
+        const w = saveWord({
+          targetLanguage: profile.targetLanguage,
+          target,
+          translation,
+          example: opt('example'),
+          reason,
+          kana: opt('kana'),
+          kanji: opt('kanji'),
+          romaji: opt('romaji'),
+        })
+        setSessionWords((ws) => [w, ...ws.filter((x) => x.id !== w.id)])
+        return { saved: true }
+      }
+      if (name === 'mark_recall') {
+        const w = findWord(profile.targetLanguage, String(args?.word ?? ''))
+        if (!w) return { error: 'Not one of their saved words.' }
+        reviewWord(w.id, Boolean(args?.remembered))
         return { saved: true }
       }
       if (name === 'hang_up') {
@@ -101,7 +148,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         : kickoffMessage(isLevelCall, motherTongue, profile.learningStyle),
       tools: isLevelCall
         ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP]
-        : [UPDATE_LEARNING_STYLE, HANG_UP, ...(lesson ? [COMPLETE_LESSON] : [])],
+        : [UPDATE_LEARNING_STYLE, HANG_UP, SAVE_WORD, MARK_RECALL, ...(lesson ? [COMPLETE_LESSON] : [])],
       onToolCall,
       getAuthToken: accessToken,
       onChange: (s) => call.current === c && setSnap(s),
@@ -140,9 +187,26 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
     return () => clearInterval(t)
   }, [snap.connectedAt, isLevelCall, levelSet, profile.walkMinutes])
 
+  // Record the call once it has ended, for the stats on Me.
+  const recorded = useRef(false)
+  useEffect(() => {
+    if (snap.status !== 'ended' || !snap.connectedAt || recorded.current) return
+    recorded.current = true
+    const endedAt = Date.now()
+    recordWalk({
+      startedAt: snap.connectedAt,
+      endedAt,
+      minutes: Math.max(1, Math.round((endedAt - snap.connectedAt) / 60_000)),
+      topic: 'free',
+      hadPhoto: false,
+    })
+  }, [snap.status, snap.connectedAt])
+
   return {
     ...snap,
     levelResult,
+    sessionWords,
+    lessonDone,
     end: () => call.current?.end(),
     unblockAudio: () => call.current?.unblockAudio(),
   }

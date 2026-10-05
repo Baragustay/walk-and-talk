@@ -36,6 +36,7 @@ export interface Walk {
 
 export interface Word {
   id: string
+  targetLanguage: TargetLanguage
   target: string
   translation: string
   example: string

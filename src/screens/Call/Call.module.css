@@ -120,3 +120,33 @@
   border-radius: 8px;
   white-space: pre-wrap;
 }
+
+.done {
+  font-weight: 700;
+}
+
+.recap {
+  width: 100%;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.recap ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 40dvh;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+}
+.recap li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+}
+.recap li + li { border-top: 1.5px solid var(--line); }

@@ -1,17 +1,22 @@
 import { Link } from 'react-router'
 import { GearIcon } from '../../components/Icons'
 import { buddySrc } from '../../components/Buddy/buddyImages'
-import { MOCK_STATS } from '../../mock/data'
+import { useProfile } from '../../state/profile'
+import { useWalks, walkStats } from '../../state/walks'
+import { useWords } from '../../state/words'
 import styles from './Me.module.css'
 
-const STATS = [
-  { value: MOCK_STATS.walksThisWeek, label: 'walks this week' },
-  { value: MOCK_STATS.minutesSpoken, label: 'minutes spoken' },
-  { value: MOCK_STATS.wordsLearned, label: 'words learned' },
-  { value: MOCK_STATS.wordsRemembered, label: 'words remembered' },
-]
-
 export function Me() {
+  const profile = useProfile()
+  const words = useWords(profile.targetLanguage)
+  const { walksThisWeek, minutesSpoken } = walkStats(useWalks())
+  const STATS = [
+    { value: walksThisWeek, label: walksThisWeek === 1 ? 'call this week' : 'calls this week' },
+    { value: minutesSpoken, label: 'minutes spoken' },
+    { value: words.length, label: 'words learned' },
+    { value: words.filter((w) => w.timesRemembered > 0).length, label: 'words remembered' },
+  ]
+
   return (
     <div className="screen">
       <header className={styles.header}>
