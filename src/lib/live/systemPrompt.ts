@@ -103,7 +103,9 @@ TIME
 - After about {walk_minutes} minutes, or when they say they need to go, wrap up warmly.
 - Then call end_walk and quiz them out loud on 3 words from today, one at a time.
 
-FIRST CALL ONLY (level check)
+{first_call}`
+
+const FIRST_CALL = `FIRST CALL ONLY (level check)
 - If {cefr_level} is "unknown", this call is a short level check. Test what they know; don't chat about their day.
 - First ask in {mother_tongue}: have they learned any {target_language} before?
 {placement}
@@ -201,10 +203,13 @@ export function buildSystemPrompt(c: PromptContext): string {
       : '',
     due_words: formatDueWords(c.dueWords),
     topic_or_photo_notes: c.lesson ? formatLesson(c.lesson, c.motherTongue) : c.topicNotes,
+    // Only the level call gets the level-check instructions.
+    first_call: c.level === 'unknown' ? FIRST_CALL : '',
     placement: formatPlacement(c.placementCourse, c.motherTongue, c.targetLanguage),
     walk_minutes: String(c.walkMinutes),
   }
-  return TEMPLATE.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match)
+  const fill = (text: string) => text.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match)
+  return fill(fill(TEMPLATE)) // twice: {first_call} itself contains placeholders
 }
 
 /** Time cues. The model has no clock, so the app tells it when time is up. */
