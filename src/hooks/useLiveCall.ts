@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { languageName, targetLanguageName } from '../lib/languages'
 import { LiveCall, type CallSnapshot } from '../lib/live/liveCall'
-import { buildSystemPrompt, kickoffMessage } from '../lib/live/systemPrompt'
+import { buildSystemPrompt, kickoffMessage, levelCallWrapUpCue, walkWrapUpCue } from '../lib/live/systemPrompt'
 import { parseSetLevel, SET_LEVEL, type ToolHandler } from '../lib/live/tools'
 import { updateProfile } from '../state/profile'
 import type { Level, Profile } from '../types'
@@ -13,7 +13,12 @@ const INITIAL: CallSnapshot = {
   bubbles: [],
   connectedAt: null,
   audioBlocked: false,
+  log: [],
 }
+
+// The model has no clock, so we tell it when to wrap up.
+const LEVEL_CUE_AT = 4 * 60 // seconds
+const LEVEL_CUE_AGAIN_AT = 6.5 * 60 // if it still hasn't set a level
 
 /** Starts a Live call when the screen mounts, hangs up when it unmounts. */
 export function useLiveCall(profile: Profile, isLevelCall: boolean) {
@@ -27,6 +32,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       motherTongue,
       targetLanguage: targetLanguageName(profile.targetLanguage),
       level: isLevelCall ? 'unknown' : profile.level,
+      levelNote: isLevelCall ? '' : profile.levelNote,
       // TODO(phase 2): real walk count and due words from Dexie. No fake words until then.
       walkCount: 1,
       dueWords: [],
@@ -60,6 +66,32 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       c.end()
     }
   }, [])
+
+  // Time cues, counted from when the line opened.
+  const levelSet = levelResult !== null
+  const cuesSent = useRef(new Set<string>())
+  useEffect(() => {
+    if (!snap.connectedAt) return
+    const connectedAt = snap.connectedAt
+    const check = () => {
+      const c = call.current
+      if (!c) return
+      const elapsed = (Date.now() - connectedAt) / 1000
+      const once = (key: string, text: string) => {
+        if (cuesSent.current.has(key)) return
+        cuesSent.current.add(key)
+        c.sendNote(text)
+      }
+      if (isLevelCall) {
+        if (elapsed >= LEVEL_CUE_AT && !levelSet) once('level', levelCallWrapUpCue())
+        if (elapsed >= LEVEL_CUE_AGAIN_AT && !levelSet) once('level-again', levelCallWrapUpCue())
+      } else if (elapsed >= profile.walkMinutes * 60) {
+        once('walk', walkWrapUpCue(profile.walkMinutes))
+      }
+    }
+    const t = setInterval(check, 5000)
+    return () => clearInterval(t)
+  }, [snap.connectedAt, isLevelCall, levelSet, profile.walkMinutes])
 
   return {
     ...snap,

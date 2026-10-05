@@ -25,8 +25,10 @@ export interface CallSnapshot {
   bubbles: Bubble[]
   /** When the line opened (ms), for the timer. */
   connectedAt: number | null
-  /** The browser blocked audio output; the user needs to tap once. */
+  /** The browser blocked or paused audio; the user needs to tap once. */
   audioBlocked: boolean
+  /** Recent events, newest last. Shown when call debug is on in Settings. */
+  log: string[]
 }
 
 export interface LiveCallOptions {
@@ -48,7 +50,9 @@ export class LiveCall {
     bubbles: [],
     connectedAt: null,
     audioBlocked: false,
+    log: [],
   }
+  private startedAt = Date.now()
   private session: Session | null = null
   private sessionGen = 0
   private mic: Mic | null = null
@@ -72,6 +76,8 @@ export class LiveCall {
   async start() {
     keepScreenOn()
     this.screenHeld = true
+    // Phones can pause audio mid-call (lock screen, other apps, notifications).
+    getAudioContext().onstatechange = this.onAudioState
     try {
       this.mic = await startMic((pcm) => this.sendAudio(pcm))
     } catch (e) {
@@ -89,6 +95,7 @@ export class LiveCall {
       turnComplete: true,
     })
     this.set({ status: 'live', connectedAt: Date.now(), audioBlocked: !isAudioRunning() })
+    this.debug('connected')
     this.startThinking() // Buddy is about to pick up
   }
 
@@ -98,6 +105,25 @@ export class LiveCall {
     this.ending = true
     this.cleanup()
     if (this.snap.status !== 'error') this.set({ status: 'ended' })
+  }
+
+  /**
+   * Tell Buddy something mid-call, e.g. a time cue. Waits for a pause so it doesn't
+   * cut Buddy or the user off (gives up waiting after 20 s and sends anyway).
+   */
+  sendNote(text: string) {
+    const deadline = Date.now() + 20_000
+    const trySend = () => {
+      if (this.ending) return
+      const busy = this.player.playing || this.userSpeaking || this.snap.status !== 'live'
+      if (busy && Date.now() < deadline) {
+        setTimeout(trySend, 500)
+        return
+      }
+      this.debug(`note: ${text.slice(0, 40)}…`)
+      this.session?.sendClientContent({ turns: [{ role: 'user', parts: [{ text }] }], turnComplete: true })
+    }
+    trySend()
   }
 
   /** Call from a tap if the browser blocked audio. */
@@ -152,6 +178,7 @@ export class LiveCall {
 
   private async reconnect() {
     if (this.ending || this.snap.status === 'reconnecting') return
+    this.debug('reconnecting')
     this.set({ status: 'reconnecting' })
     const old = this.session
     this.session = null
@@ -171,6 +198,7 @@ export class LiveCall {
 
   private onUnexpectedClose() {
     if (this.ending) return
+    this.debug(`socket closed${this.resumeHandle ? ', resuming' : ', no resume handle'}`)
     if (this.resumeHandle) void this.reconnect()
     else this.fail('network')
   }
@@ -187,6 +215,7 @@ export class LiveCall {
       this.resumeHandle = m.sessionResumptionUpdate.newHandle
     }
     if (m.goAway) {
+      this.debug(`goAway ${m.goAway.timeLeft ?? ''}`)
       void this.reconnect()
       return
     }
@@ -194,6 +223,7 @@ export class LiveCall {
     // Server-side voice detection. The wire field is `type`; the SDK types call it voiceActivityType.
     const va = m.voiceActivity as { type?: string; voiceActivityType?: string } | undefined
     const vaType = va?.type ?? va?.voiceActivityType
+    if (vaType) this.debug(vaType === 'ACTIVITY_START' ? 'you: speaking' : 'you: stopped')
     if (vaType === 'ACTIVITY_START') {
       this.userSpeaking = true
       this.closeBubble('buddy')
@@ -210,6 +240,7 @@ export class LiveCall {
         } catch {
           response = { error: 'Could not run that' }
         }
+        this.debug(`tool ${fc.name} ${JSON.stringify(fc.args)} -> ${JSON.stringify(response)}`)
         return { id: fc.id, name: fc.name, response }
       })
       this.session?.sendToolResponse({ functionResponses })
@@ -217,6 +248,8 @@ export class LiveCall {
 
     const sc = m.serverContent
     if (sc) {
+      if (sc.interrupted) this.debug('buddy interrupted')
+      if (sc.turnComplete) this.debug('buddy turn complete')
       if (sc.interrupted) {
         this.player.clear()
         this.closeBubble('buddy')
@@ -291,7 +324,20 @@ export class LiveCall {
 
   // ---- plumbing ---------------------------------------------------------
 
+  private onAudioState = () => {
+    const state = getAudioContext().state
+    this.debug(`audio ${state}`)
+    if (!this.ending) this.set({ audioBlocked: state !== 'running' })
+  }
+
+  private debug(event: string) {
+    const t = Math.round((Date.now() - this.startedAt) / 1000)
+    const stamp = `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`
+    this.set({ log: [...this.snap.log.slice(-29), `${stamp} ${event}`] })
+  }
+
   private fail(error: CallError) {
+    this.debug(`error: ${error}`)
     this.ending = true
     this.cleanup()
     this.set({ status: 'error', error })
@@ -306,6 +352,8 @@ export class LiveCall {
     this.player.clear()
     if (this.thinkingTimer) clearTimeout(this.thinkingTimer)
     // Only once per call, so a late cleanup can't release a newer call's wake lock.
+    const ctx = getAudioContext()
+    if (ctx.onstatechange === this.onAudioState) ctx.onstatechange = null
     if (this.screenHeld) releaseScreen()
     this.screenHeld = false
   }

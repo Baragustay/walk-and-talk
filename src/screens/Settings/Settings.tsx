@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 import { BackIcon } from '../../components/Icons'
 import { MOTHER_TONGUES, TARGET_LANGUAGES } from '../../lib/languages'
 import { levelLabel } from '../../lib/levels'
+import { setCallDebug, useCallDebug } from '../../state/debug'
 import { deleteAllData, updateProfile, useProfile } from '../../state/profile'
 import type { TargetLanguage } from '../../types'
 import styles from './Settings.module.css'
@@ -13,8 +14,9 @@ const WALK_OPTIONS = [10, 15, 20, 30]
 export function Settings() {
   const navigate = useNavigate()
   const profile = useProfile()
+  const callDebug = useCallDebug()
   const dialog = useRef<HTMLDialogElement>(null)
-  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId() }
+  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId() }
 
   const confirmDelete = () => {
     deleteAllData()
@@ -116,6 +118,23 @@ export function Settings() {
             Reminders <span className="soft">(coming soon)</span>
           </span>
           <input id={ids.reminders} type="checkbox" role="switch" className="switch" disabled />
+        </label>
+      </section>
+
+      <section className={styles.group} aria-labelledby="proto-title">
+        <h2 id="proto-title" className="section-title">Prototype</h2>
+        <label className="switch-row" htmlFor={ids.debug}>
+          <span>
+            Show call log <span className="soft">(for testing)</span>
+          </span>
+          <input
+            id={ids.debug}
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={callDebug}
+            onChange={(e) => setCallDebug(e.target.checked)}
+          />
         </label>
       </section>
 

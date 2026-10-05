@@ -6,6 +6,7 @@ import { useCallTimer, useLiveCall } from '../../hooks/useLiveCall'
 import { formatTimer } from '../../lib/format'
 import { levelLabel } from '../../lib/levels'
 import type { CallError } from '../../lib/live/liveCall'
+import { useCallDebug } from '../../state/debug'
 import { updateProfile, useProfile } from '../../state/profile'
 import styles from './Call.module.css'
 
@@ -34,6 +35,7 @@ export function Call() {
   const isLevelCall = params.get('mode') === 'level'
   const profile = useProfile()
   const call = useLiveCall(profile, isLevelCall)
+  const showLog = useCallDebug()
   const seconds = useCallTimer(call.connectedAt, call.status === 'live' || call.status === 'reconnecting')
   const logEnd = useRef<HTMLDivElement>(null)
 
@@ -117,8 +119,13 @@ export function Call() {
       )}
       {call.audioBlocked && (
         <button type="button" className="btn btn-primary" onClick={() => call.unblockAudio()}>
-          Tap to hear Buddy
+          Tap to turn sound back on
         </button>
+      )}
+      {showLog && (
+        <pre className={styles.debug} aria-label="Call log">
+          {call.log.slice(-6).join('\n') || 'No events yet'}
+        </pre>
       )}
 
       <div className={styles.log} role="log" aria-label="Conversation">
