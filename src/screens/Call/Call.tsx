@@ -19,6 +19,10 @@ const ERRORS: Record<CallError, { title: string; body: string }> = {
     title: 'No microphone here',
     body: 'This browser only allows the microphone on a secure (https) page. Open the app from its https address.',
   },
+  'mic-lost': {
+    title: 'The microphone stopped',
+    body: 'Your phone turned the microphone off, maybe because the screen locked or another app took it. Call again.',
+  },
   token: {
     title: "Buddy can't pick up",
     body: "We couldn't start the call. Check your connection and try again in a moment.",
@@ -124,7 +128,7 @@ export function Call() {
       )}
       {showLog && (
         <pre className={styles.debug} aria-label="Call log">
-          {call.log.slice(-6).join('\n') || 'No events yet'}
+          {call.log.slice(-10).join('\n') || 'No events yet'}
         </pre>
       )}
 

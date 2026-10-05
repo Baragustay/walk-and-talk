@@ -2,6 +2,7 @@
 import { GoogleGenAI, Modality, type FunctionDeclaration, type LiveServerMessage, type Session } from '@google/genai'
 import type { BuddyState } from '../../components/Buddy/buddyImages'
 import { keepScreenOn, releaseScreen } from '../wakeLock'
+import { playHangup, playPickup, RING_CYCLE_S, startRinging } from './audio/callSounds'
 import { isAudioRunning, getAudioContext } from './audio/context'
 import { MicError, startMic, type Mic } from './audio/mic'
 import { PcmPlayer } from './audio/player'
@@ -9,7 +10,7 @@ import { LIVE_API_VERSION } from './model'
 import type { ToolHandler } from './tools'
 
 export type CallStatus = 'connecting' | 'live' | 'reconnecting' | 'ended' | 'error'
-export type CallError = 'mic-denied' | 'mic-unsupported' | 'token' | 'network'
+export type CallError = 'mic-denied' | 'mic-unsupported' | 'mic-lost' | 'token' | 'network'
 
 export interface Bubble {
   id: number
@@ -73,6 +74,11 @@ export class LiveCall {
   private replyOwed = false
   private nudged = false
   private turnHadAudio = false
+  // Mic health, logged every 20 s so the call log shows whether Buddy can hear anything
+  private micPeak = 0
+  private micChunks = 0
+  private heartbeat: ReturnType<typeof setInterval> | null = null
+  private ringing: { stop: () => void } | null = null
 
   constructor(private opts: LiveCallOptions) {}
 
@@ -85,8 +91,20 @@ export class LiveCall {
     this.screenHeld = true
     // Phones can pause audio mid-call (lock screen, other apps, notifications).
     getAudioContext().onstatechange = this.onAudioState
+    this.ringing = startRinging()
+    const ringStarted = Date.now()
     try {
-      this.mic = await startMic((pcm) => this.sendAudio(pcm))
+      this.mic = await startMic({
+        onChunk: (pcm, peak) => {
+          this.micChunks++
+          this.micPeak = Math.max(this.micPeak, peak)
+          this.sendAudio(pcm)
+        },
+        onTrackState: (state) => {
+          this.debug(`mic ${state}`)
+          if (state === 'ended' && !this.ending) this.fail('mic-lost')
+        },
+      })
     } catch (e) {
       return this.fail(e instanceof MicError && e.kind === 'unsupported' ? 'mic-unsupported' : 'mic-denied')
     }
@@ -97,18 +115,34 @@ export class LiveCall {
 
     if (!(await this.connect())) return this.fail('network')
     if (this.ending) return this.cleanup()
+
+    // Let it ring at least once, like a real call, then pick up.
+    const minRing = RING_CYCLE_S * 1000 - 800
+    const waited = Date.now() - ringStarted
+    if (waited < minRing) await new Promise((r) => setTimeout(r, minRing - waited))
+    if (this.ending) return this.cleanup()
+    this.ringing?.stop()
+    this.ringing = null
+    playPickup()
     this.session?.sendClientContent({
       turns: [{ role: 'user', parts: [{ text: this.opts.kickoff }] }],
       turnComplete: true,
     })
     this.set({ status: 'live', connectedAt: Date.now(), audioBlocked: !isAudioRunning() })
     this.debug('connected')
+    this.heartbeat = setInterval(() => {
+      // Peak is 0..32767. Under ~300 for 20 s means the mic is silent or cut off.
+      this.debug(`mic: ${this.micChunks} chunks, loudest ${this.micPeak}${this.micChunks === 0 ? ' (NO AUDIO)' : ''}`)
+      this.micPeak = 0
+      this.micChunks = 0
+    }, 20_000)
     this.startThinking() // Buddy is about to pick up
   }
 
   /** Hang up. Safe to call more than once. */
   end() {
     if (this.ending) return
+    if (this.snap.status === 'live' || this.snap.status === 'reconnecting') playHangup()
     this.ending = true
     this.cleanup()
     if (this.snap.status !== 'error') this.set({ status: 'ended' })
@@ -380,8 +414,12 @@ export class LiveCall {
     this.sessionGen++
     this.session?.close()
     this.session = null
+    this.ringing?.stop()
+    this.ringing = null
     this.mic?.stop()
     this.mic = null
+    if (this.heartbeat) clearInterval(this.heartbeat)
+    this.heartbeat = null
     this.player.clear()
     if (this.thinkingTimer) clearTimeout(this.thinkingTimer)
     // Only once per call, so a late cleanup can't release a newer call's wake lock.
