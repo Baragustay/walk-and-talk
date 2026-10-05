@@ -44,8 +44,12 @@ Click **Deploy**. Turn on **Auto deployment** and add the webhook it shows to Gi
 
 ## 4. The Gemini key (once)
 
-In hPanel **File Manager**, go to the folder **one level above** the subdomain folder
-(for `public_html/buddy` that's `public_html`). Create a file named **`buddy-secrets.php`**:
+In hPanel **File Manager**, go to **`domains/barboragustafsson.com`** (the folder that
+*contains* `public_html`). Create a file named **`buddy-secrets.php`**:
+
+> Never put it inside the site folder (`public_html/buddy`): Hostinger's Git deploy replaces
+> everything in there on each deploy, and the file disappears. If the key is missing, the token
+> endpoint's error says which folder it expects.
 
 ```php
 <?php return 'PASTE-YOUR-GEMINI-KEY-HERE';
