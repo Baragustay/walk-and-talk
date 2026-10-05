@@ -3,6 +3,9 @@ export interface Phrase {
   target: string
   /** Meaning in English. Buddy explains it in the user's mother tongue. */
   meaning: string
+  /** Japanese only: reading in hiragana/katakana, and romaji. */
+  kana?: string
+  romaji?: string
 }
 
 export interface Lesson {

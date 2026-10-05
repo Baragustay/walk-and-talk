@@ -117,8 +117,13 @@ export interface PromptContext {
 }
 
 function formatLesson(plan: LessonPlan, motherTongue: string): string {
-  const phrases = (list: { target: string; meaning: string }[]) =>
-    list.map((p) => `- ${p.target} = ${p.meaning}`).join('\n')
+  const phrases = (list: LessonPlan['lesson']['phrases']) =>
+    list
+      .map((p) => {
+        const reading = p.kana && p.kana !== p.target ? ` (${p.kana}${p.romaji ? `, ${p.romaji}` : ''})` : p.romaji ? ` (${p.romaji})` : ''
+        return `- ${p.target}${reading} = ${p.meaning}`
+      })
+      .join('\n')
   return `TODAY'S LESSON (${plan.number} of ${plan.total}): ${plan.lesson.title}
 This call is a lesson, not free conversation. Follow this plan.
 Goal: by the end they can ${plan.lesson.canDo}.
