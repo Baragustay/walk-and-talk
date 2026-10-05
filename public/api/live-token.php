@@ -52,7 +52,8 @@ if ($apiKey === '') {
     if (!is_readable($file)) continue;
     $text = (string) file_get_contents($file);
     // Accepts  <?php return 'KEY';   or just  KEY
-    if (preg_match('/[\'"]([A-Za-z0-9_\-]{20,})[\'"]/', $text, $m) || preg_match('/([A-Za-z0-9_\-]{30,})/', $text, $m)) {
+    // Google keys may contain dots (e.g. "AQ.…"), so allow them.
+    if (preg_match('/[\'"]([A-Za-z0-9_.\-]{20,})[\'"]/', $text, $m) || preg_match('/([A-Za-z0-9_.\-]{30,})/', $text, $m)) {
       $apiKey = $m[1];
       break;
     }
