@@ -4,7 +4,7 @@ An audio-first language app. The user "calls" Buddy, a friendly AI character, wh
 
 - **Mother tongue:** any language the user picks.
 - **Target language:** Swedish, Spanish or Japanese. Nothing else for now.
-- **Users:** 13 and up.
+- **Users:** adults (18+) for the MVP. Decided Oct 2026; teens may come later.
 - **Goal of this build:** a mobile-first web prototype to test the conversation. Native app comes later, so keep logic out of UI components where possible.
 
 Full product decisions live in the PRD (Walk & Talk PRD v3). This file is the build brief. If they disagree, ask me.

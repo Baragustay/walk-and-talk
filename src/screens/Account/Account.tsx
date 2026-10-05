@@ -136,7 +136,9 @@ export function Account() {
           Not now
         </button>
       )}
-      <p className={styles.small}>We only store what Buddy needs to teach you. No voice recordings.</p>
+      <p className={styles.small}>
+        For adults (18+). We only store what Buddy needs to teach you. No voice recordings.
+      </p>
     </div>
   )
 }

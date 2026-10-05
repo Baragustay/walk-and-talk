@@ -26,6 +26,7 @@ export function Welcome() {
     >
       <Buddy state="waving" size={220} />
       <p className={styles.lead}>Call me while you walk, and we'll practise speaking a new language together.</p>
+      <p className="soft">For adults (18+).</p>
     </OnboardingStep>
   )
 }

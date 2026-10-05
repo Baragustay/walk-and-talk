@@ -57,7 +57,6 @@ chat. Never send the **service_role / secret** key. The app doesn't need it.
 
 - Supabase's built-in email sender only allows a few emails per hour: fine for testing. Before
   real users, set up your own SMTP under Authentication → Emails (Hostinger email works).
-- Users are 13+. Before launch you'll need a privacy policy, and it's worth a quick legal check
-  on storing teenagers' data in the EU.
+- The MVP is for adults (18+). Before launch you'll still need a privacy policy (GDPR).
 - Anonymous trial accounts are limited per IP address by Supabase (Authentication → Rate
   limits). If people abuse it, switch on CAPTCHA there.
