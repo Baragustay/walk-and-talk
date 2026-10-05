@@ -4,6 +4,7 @@ import { Buddy } from '../../components/Buddy/Buddy'
 import { PhoneIcon } from '../../components/Icons'
 import { useCallTimer, useLiveCall } from '../../hooks/useLiveCall'
 import { formatTimer } from '../../lib/format'
+import { levelLabel } from '../../lib/levels'
 import type { CallError } from '../../lib/live/liveCall'
 import { updateProfile, useProfile } from '../../state/profile'
 import styles from './Call.module.css'
@@ -42,17 +43,25 @@ export function Call() {
     logEnd.current?.scrollIntoView({ block: 'end' })
   }, [call.bubbles.length, lastText])
 
+  // Leaving a level call always finishes onboarding. If Buddy never set a level and
+  // there's none from before, start at A1 (same as "Skip for now").
+  const finishLevelCall = () => {
+    if (!call.levelResult && profile.level === 'unknown') {
+      updateProfile({ level: 'A1', levelNote: 'Level call ended before Buddy decided' })
+    }
+    updateProfile({ onboarded: true })
+  }
+
   const endCall = () => {
     call.end()
     if (isLevelCall) {
-      // Phase 6: Buddy sets the level through set_level. For now just finish onboarding.
-      updateProfile({ onboarded: true })
+      finishLevelCall()
       navigate('/', { replace: true })
     }
   }
 
   const leave = () => {
-    if (isLevelCall) updateProfile({ onboarded: true })
+    if (isLevelCall) finishLevelCall()
     navigate('/', { replace: true })
   }
 
@@ -123,6 +132,14 @@ export function Call() {
       </div>
 
       <footer className={styles.bottom}>
+        {call.levelResult && (
+          <section className={styles.wordCard} aria-live="polite" aria-label="Your level">
+            <span>
+              Your level: <strong>{levelLabel(call.levelResult.level, profile.targetLanguage)}</strong>
+            </span>
+            <span className={styles.translation}>Saved</span>
+          </section>
+        )}
         {/* Word card returns in phase 6, when Buddy can call save_word. */}
         <button type="button" className={styles.end} onClick={endCall}>
           <PhoneIcon size={30} />

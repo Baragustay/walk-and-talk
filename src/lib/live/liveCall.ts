@@ -1,11 +1,12 @@
 // One phone call with Buddy over the Gemini Live API. No React in here.
-import { GoogleGenAI, Modality, type LiveServerMessage, type Session } from '@google/genai'
+import { GoogleGenAI, Modality, type FunctionDeclaration, type LiveServerMessage, type Session } from '@google/genai'
 import type { BuddyState } from '../../components/Buddy/buddyImages'
 import { keepScreenOn, releaseScreen } from '../wakeLock'
 import { isAudioRunning, getAudioContext } from './audio/context'
 import { MicError, startMic, type Mic } from './audio/mic'
 import { PcmPlayer } from './audio/player'
 import { LIVE_API_VERSION } from './model'
+import type { ToolHandler } from './tools'
 
 export type CallStatus = 'connecting' | 'live' | 'reconnecting' | 'ended' | 'error'
 export type CallError = 'mic-denied' | 'mic-unsupported' | 'token' | 'network'
@@ -31,6 +32,9 @@ export interface CallSnapshot {
 export interface LiveCallOptions {
   systemPrompt: string
   kickoff: string
+  tools?: FunctionDeclaration[]
+  /** Runs Buddy's function calls; the returned object goes back to Buddy as the result. */
+  onToolCall?: ToolHandler
   onChange: (s: CallSnapshot) => void
 }
 
@@ -132,6 +136,7 @@ export class LiveCall {
           contextWindowCompression: { slidingWindow: {} },
           // Each connection lasts ~10 min; the handle lets us pick up where we left off.
           sessionResumption: { handle: this.resumeHandle },
+          tools: this.opts.tools?.length ? [{ functionDeclarations: this.opts.tools }] : undefined,
         },
         callbacks: {
           onmessage: (m) => gen === this.sessionGen && this.onMessage(m),
@@ -195,6 +200,19 @@ export class LiveCall {
     } else if (vaType === 'ACTIVITY_END') {
       this.userSpeaking = false
       this.startThinking()
+    }
+
+    if (m.toolCall?.functionCalls?.length) {
+      const functionResponses = m.toolCall.functionCalls.map((fc) => {
+        let response: Record<string, unknown>
+        try {
+          response = this.opts.onToolCall?.(fc.name ?? '', fc.args) ?? { error: 'Unknown function' }
+        } catch {
+          response = { error: 'Could not run that' }
+        }
+        return { id: fc.id, name: fc.name, response }
+      })
+      this.session?.sendToolResponse({ functionResponses })
     }
 
     const sc = m.serverContent

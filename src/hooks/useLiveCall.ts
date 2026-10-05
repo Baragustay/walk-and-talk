@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import { languageName, targetLanguageName } from '../lib/languages'
 import { LiveCall, type CallSnapshot } from '../lib/live/liveCall'
 import { buildSystemPrompt, kickoffMessage } from '../lib/live/systemPrompt'
-import { dueWords, MOCK_WALKS, MOCK_WORDS } from '../mock/data'
-import type { Profile } from '../types'
+import { parseSetLevel, SET_LEVEL, type ToolHandler } from '../lib/live/tools'
+import { updateProfile } from '../state/profile'
+import type { Level, Profile } from '../types'
 
 const INITIAL: CallSnapshot = {
   status: 'connecting',
@@ -17,23 +18,39 @@ const INITIAL: CallSnapshot = {
 /** Starts a Live call when the screen mounts, hangs up when it unmounts. */
 export function useLiveCall(profile: Profile, isLevelCall: boolean) {
   const [snap, setSnap] = useState<CallSnapshot>(INITIAL)
+  const [levelResult, setLevelResult] = useState<{ level: Level; note: string } | null>(null)
   const call = useRef<LiveCall | null>(null)
 
   useEffect(() => {
-    // Phase 5: free talk only. Walk count and due words are still mock data until Dexie (phase 2).
+    const motherTongue = languageName(profile.motherTongue)
     const systemPrompt = buildSystemPrompt({
-      motherTongue: languageName(profile.motherTongue),
+      motherTongue,
       targetLanguage: targetLanguageName(profile.targetLanguage),
       level: isLevelCall ? 'unknown' : profile.level,
-      walkCount: isLevelCall ? 1 : MOCK_WALKS.length + 1,
-      dueWords: isLevelCall ? [] : dueWords(MOCK_WORDS[profile.targetLanguage]),
+      // TODO(phase 2): real walk count and due words from Dexie. No fake words until then.
+      walkCount: 1,
+      dueWords: [],
       topicNotes: 'Free talk. Follow whatever the user wants to talk about.',
       walkMinutes: isLevelCall ? 5 : profile.walkMinutes,
     })
+
+    const onToolCall: ToolHandler = (name, args) => {
+      if (name === 'set_level') {
+        const result = parseSetLevel(args)
+        if (!result) return { error: 'cefr_band must be one of A1, A2, B1, B2, C1' }
+        updateProfile({ level: result.level, levelNote: result.note })
+        setLevelResult(result)
+        return { saved: true }
+      }
+      return { error: `Unknown function ${name}` }
+    }
+
     // Only the current call may update the screen (React dev mode mounts twice).
     const c: LiveCall = new LiveCall({
       systemPrompt,
-      kickoff: kickoffMessage(),
+      kickoff: kickoffMessage(isLevelCall, motherTongue),
+      tools: isLevelCall ? [SET_LEVEL] : [],
+      onToolCall,
       onChange: (s) => call.current === c && setSnap(s),
     })
     call.current = c
@@ -42,11 +59,11 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       call.current = null
       c.end()
     }
-    // Settings can't change mid-call, so only start once per mount.
   }, [])
 
   return {
     ...snap,
+    levelResult,
     end: () => call.current?.end(),
     unblockAudio: () => call.current?.unblockAudio(),
   }
