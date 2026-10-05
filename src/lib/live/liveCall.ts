@@ -10,7 +10,7 @@ import { LIVE_API_VERSION } from './model'
 import type { ToolHandler } from './tools'
 
 export type CallStatus = 'connecting' | 'live' | 'reconnecting' | 'ended' | 'error'
-export type CallError = 'mic-denied' | 'mic-unsupported' | 'mic-lost' | 'token' | 'network'
+export type CallError = 'mic-denied' | 'mic-unsupported' | 'mic-lost' | 'login' | 'token' | 'network'
 
 export interface Bubble {
   id: number
@@ -115,7 +115,8 @@ export class LiveCall {
     }
     if (this.ending) return this.cleanup()
 
-    if (!(await this.fetchToken())) return this.fail('token')
+    const tokenResult = await this.fetchToken()
+    if (tokenResult !== 'ok') return this.fail(tokenResult)
     if (this.ending) return this.cleanup()
 
     if (!(await this.connect())) return this.fail('network')
@@ -197,19 +198,20 @@ export class LiveCall {
 
   // ---- connection -------------------------------------------------------
 
-  private async fetchToken(): Promise<boolean> {
+  private async fetchToken(): Promise<'ok' | 'login' | 'token'> {
     try {
       const auth = await this.opts.getAuthToken?.()
       const res = await fetch('/.netlify/functions/live-token', {
         method: 'POST',
         headers: auth ? { Authorization: `Bearer ${auth}` } : {},
       })
-      if (!res.ok) return false
+      if (res.status === 401) return 'login' // trial over or not logged in
+      if (!res.ok) return 'token'
       const body = await res.json()
       this.token = { value: body.token, model: body.model, expiresAt: body.expiresAt }
-      return true
+      return 'ok'
     } catch {
-      return false
+      return 'token'
     }
   }
 
@@ -256,7 +258,7 @@ export class LiveCall {
     let ok = await this.connect()
     if (!ok && !this.ending && Date.now() > (this.token?.expiresAt ?? 0) - 60_000) {
       // Token ran out: get a fresh one and try once more.
-      ok = (await this.fetchToken()) && (await this.connect())
+      ok = (await this.fetchToken()) === 'ok' && (await this.connect())
     }
     if (this.ending) return
     if (ok) this.set({ status: 'live' })

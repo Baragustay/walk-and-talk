@@ -235,6 +235,11 @@ export function Settings() {
             <button type="button" className="btn" onClick={() => navigate('/account')}>
               Keep your progress
             </button>
+            {auth.status === 'anonymous' && (
+              <button type="button" className="link-btn" onClick={logOut}>
+                Sign out and start over
+              </button>
+            )}
           </>
         )}
         {auth.status === 'signedIn' && (

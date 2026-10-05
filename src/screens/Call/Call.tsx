@@ -26,6 +26,10 @@ const ERRORS: Record<CallError, { title: string; body: string }> = {
     title: 'The microphone stopped',
     body: 'Your phone turned the microphone off, maybe because the screen locked or another app took it. Call again.',
   },
+  login: {
+    title: 'Please log in to keep talking',
+    body: 'Your free try is over. Log in with your email or Google, and your level and progress come with you.',
+  },
   token: {
     title: "Buddy can't pick up",
     body: "We couldn't start the call. Check your connection and try again in a moment.",
@@ -89,9 +93,15 @@ export function Call() {
         <Buddy state="encouraging" size={180} />
         <h1>{e.title}</h1>
         <p className="soft">{e.body}</p>
-        <button type="button" className="btn btn-primary btn-block" onClick={() => window.location.reload()}>
-          Try again
-        </button>
+        {call.error === 'login' ? (
+          <button type="button" className="btn btn-primary btn-block" onClick={() => navigate('/account?from=onboarding')}>
+            Log in
+          </button>
+        ) : (
+          <button type="button" className="btn btn-primary btn-block" onClick={() => window.location.reload()}>
+            Try again
+          </button>
+        )}
         <button type="button" className="link-btn" onClick={leave}>
           Back home
         </button>

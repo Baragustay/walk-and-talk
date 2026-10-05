@@ -2,7 +2,8 @@ import { useId, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { BackIcon } from '../../components/Icons'
-import { continueWithEmail, continueWithGoogle, signInExisting, useAuth } from '../../state/auth'
+import { continueWithEmail, continueWithGoogle, signInExisting, signOut, useAuth } from '../../state/auth'
+import { resetLocalProfile } from '../../state/profile'
 import styles from './Account.module.css'
 
 // /account                    keep progress (attach Google or email to the trial account)
@@ -133,6 +134,24 @@ export function Account() {
         </p>
       )}
 
+      {!signIn && (
+        <button
+          type="button"
+          className="link-btn"
+          onClick={async () => {
+            await signOut()
+            resetLocalProfile()
+            navigate('/welcome', { replace: true })
+          }}
+        >
+          Not you? Start over
+        </button>
+      )}
+      {signIn || (
+        <button type="button" className="link-btn" onClick={() => navigate('/account?mode=signin')}>
+          I already have an account
+        </button>
+      )}
       <p className={styles.small}>
         For adults (18+). We only store what Buddy needs to teach you. No voice recordings.
       </p>
