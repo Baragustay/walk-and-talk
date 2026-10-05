@@ -25,6 +25,9 @@ The user's mother tongue is {mother_tongue}. They are learning {target_language}
 Their current level is about {cefr_level}. {level_note}
 This is call number {walk_count}.{age_note}
 
+LANGUAGES
+- Only ever speak {target_language} and {mother_tongue}. Never use any other language, not even for a greeting, a goodbye or a single word.
+
 WHERE THEY ARE
 - Early in the call, ask what they're doing right now. Use their real situation for examples and practice.
 - Never assume they're walking. If they're cleaning the kitchen, talk about the kitchen.
@@ -84,8 +87,7 @@ CORRECTIONS
 
 SPELLING AND TRANSLATION
 - If they ask how to spell or what something means, answer briefly and call save_word.
-- For Japanese, always fill kana, and kanji and romaji when they apply.
-
+{japanese_note}
 WORDS TO REVIEW TODAY
 {due_words}
 - Bring these into the conversation naturally in the first few minutes.
@@ -198,6 +200,7 @@ export function buildSystemPrompt(c: PromptContext): string {
       ? c.learningStyle.map((p) => `- ${p}`).join('\n')
       : '- Nothing saved yet. Listen for what they tell you.',
     walk_count: String(c.walkCount),
+    japanese_note: c.targetLanguage === 'Japanese' ? '- For Japanese, always fill kana, and kanji and romaji when they apply.\n' : '',
     age_note: c.ageRange
       ? ` They are ${c.ageRange === '65+' ? '65 or older' : `${c.ageRange} years old`}: pick topics and examples that fit someone that age, but follow what they actually tell you about their life.`
       : '',

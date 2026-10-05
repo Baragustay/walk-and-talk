@@ -1,5 +1,5 @@
 import { base64ToBytes } from './base64'
-import { getAudioContext } from './context'
+import { getAudioContext, getVoiceOutput } from './context'
 
 const RATE = 24000 // Gemini Live speaks 24 kHz 16-bit PCM
 const LEAD = 0.06 // seconds of buffer before the first chunk plays
@@ -26,7 +26,7 @@ export class PcmPlayer {
 
     const src = ctx.createBufferSource()
     src.buffer = buffer
-    src.connect(ctx.destination)
+    src.connect(getVoiceOutput())
     const startAt = Math.max(this.nextTime, ctx.currentTime + LEAD)
     src.start(startAt)
     this.nextTime = startAt + buffer.duration

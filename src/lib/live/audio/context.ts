@@ -8,6 +8,28 @@ export function getAudioContext(): AudioContext {
   return ctx
 }
 
+let output: AudioNode | null = null
+
+/**
+ * Where Buddy's voice goes: a boost plus a limiter. Phones (iPhones especially) play much
+ * quieter while the microphone is on; the limiter keeps the boost from distorting.
+ */
+export function getVoiceOutput(): AudioNode {
+  if (output) return output
+  const ctx = getAudioContext()
+  const boost = ctx.createGain()
+  boost.gain.value = 2.5
+  const limiter = ctx.createDynamicsCompressor()
+  limiter.threshold.value = -10
+  limiter.knee.value = 6
+  limiter.ratio.value = 12
+  limiter.attack.value = 0.003
+  limiter.release.value = 0.15
+  boost.connect(limiter).connect(ctx.destination)
+  output = boost
+  return output
+}
+
 export function prepareAudio() {
   void getAudioContext().resume()
 }
