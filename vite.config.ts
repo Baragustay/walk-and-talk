@@ -1,3 +1,4 @@
+import { existsSync, readFileSync } from 'node:fs'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 
@@ -12,10 +13,14 @@ function netlifyFunctionsDev(): Plugin {
           const mod = await server.ssrLoadModule(`/netlify/functions/${name}.ts`)
           const chunks: Buffer[] = []
           for await (const c of req) chunks.push(c as Buffer)
-          const url = `http://${req.headers.host}/.netlify/functions/${name}`
+          const host = req.headers.host ?? req.headers[':authority']
+          const url = `http://${host}/.netlify/functions/${name}`
           const request = new Request(url, {
             method: req.method,
-            headers: req.headers as Record<string, string>,
+            // Skip HTTP/2 pseudo-headers (":method" etc.), which Request doesn't accept.
+            headers: Object.entries(req.headers).filter(
+              (e): e is [string, string] => !e[0].startsWith(':') && typeof e[1] === 'string',
+            ),
             body: req.method === 'GET' || req.method === 'HEAD' ? undefined : Buffer.concat(chunks),
           })
           const response: Response = await mod.default(request)
@@ -38,6 +43,13 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), netlifyFunctionsDev()],
     // host: true exposes the dev server on your local network so you can open it on your phone.
-    server: { host: true },
+    // `npm run dev:https` uses the self-signed cert in .certs/ (phones only allow the mic over https).
+    server: {
+      host: true,
+      https:
+        process.env.DEV_HTTPS && existsSync('.certs/cert.pem')
+          ? { cert: readFileSync('.certs/cert.pem'), key: readFileSync('.certs/key.pem') }
+          : undefined,
+    },
   }
 })

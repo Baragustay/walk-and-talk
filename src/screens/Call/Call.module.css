@@ -101,3 +101,9 @@
   gap: var(--space-4);
   text-align: center;
 }
+
+.status {
+  text-align: center;
+  color: var(--ink-soft);
+  font-weight: 600;
+}

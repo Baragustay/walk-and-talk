@@ -1,3 +1,4 @@
+import { prepareAudio } from '../../lib/live/audio/context'
 import { useNavigate } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { targetLanguageName } from '../../lib/languages'
@@ -20,7 +21,10 @@ export function LevelIntro() {
       title="A first short call"
       footer={
         <>
-          <button type="button" className="btn btn-primary btn-block" onClick={() => navigate('/call?mode=level')}>
+          <button type="button" className="btn btn-primary btn-block" onClick={() => {
+              prepareAudio()
+              navigate('/call?mode=level')
+            }}>
             Start level call
           </button>
           <button type="button" className="link-btn" onClick={skip}>

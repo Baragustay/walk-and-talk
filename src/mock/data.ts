@@ -50,43 +50,6 @@ export const MOCK_WALKS: Walk[] = [
   { id: 'w3', startedAt: now - 4 * DAY, endedAt: now - 4 * DAY + 12 * 60_000, minutes: 12, topic: 'daily', hadPhoto: false },
 ]
 
-export interface ScriptLine {
-  who: 'buddy' | 'user'
-  text: string
-  /** Index into MOCK_WORDS that gets "saved" after this line. */
-  saves?: number
-}
-
-export const MOCK_SCRIPT: Record<TargetLanguage, ScriptLine[]> = {
-  sv: [
-    { who: 'buddy', text: 'Hej! Var går du idag?' },
-    { who: 'user', text: 'Jag går i parken. Det är… raining?' },
-    { who: 'buddy', text: 'Det regnar! Säg: det regnar.', saves: 1 },
-    { who: 'user', text: 'Det regnar.' },
-    { who: 'buddy', text: 'Perfekt. Är du trött idag?' },
-    { who: 'user', text: 'Lite trött, men glad.' },
-    { who: 'buddy', text: 'Vad bra! Vad ser du i parken?' },
-  ],
-  es: [
-    { who: 'buddy', text: '¡Hola! ¿Dónde caminas hoy?' },
-    { who: 'user', text: 'Camino en el parque. Hoy… raining?' },
-    { who: 'buddy', text: '¡Hoy llueve! Di: hoy llueve.', saves: 1 },
-    { who: 'user', text: 'Hoy llueve.' },
-    { who: 'buddy', text: 'Perfecto. ¿Estás cansada?' },
-    { who: 'user', text: 'Un poco cansada, pero feliz.' },
-    { who: 'buddy', text: '¡Qué bien! ¿Qué ves en el parque?' },
-  ],
-  ja: [
-    { who: 'buddy', text: 'こんにちは！今日はどこを歩いていますか？' },
-    { who: 'user', text: '公園です。今日は… rain?' },
-    { who: 'buddy', text: '雨ですね！「雨」と言ってみて。', saves: 1 },
-    { who: 'user', text: '雨。' },
-    { who: 'buddy', text: 'いいですね。疲れていますか？' },
-    { who: 'user', text: 'ちょっと疲れた。でも元気。' },
-    { who: 'buddy', text: 'よかった！公園で何が見えますか？' },
-  ],
-}
-
 export const MOCK_STATS = {
   walksThisWeek: 3,
   minutesSpoken: 52,

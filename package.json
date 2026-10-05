@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:https": "DEV_HTTPS=1 vite --port 5180",
     "build": "tsc -p tsconfig.json && vite build",
     "preview": "vite preview"
   },

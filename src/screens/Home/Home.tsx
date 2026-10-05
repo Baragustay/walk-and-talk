@@ -1,4 +1,5 @@
 import { useId, useRef } from 'react'
+import { prepareAudio } from '../../lib/live/audio/context'
 import { Link, useNavigate } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { CameraIcon, CloseIcon, PhoneIcon } from '../../components/Icons'
@@ -23,7 +24,10 @@ export function Home() {
 
       <div className={styles.hero}>
         <Buddy state="idle" size={200} />
-        <button type="button" className={styles.call} onClick={() => navigate('/call')}>
+        <button type="button" className={styles.call} onClick={() => {
+            prepareAudio()
+            navigate('/call')
+          }}>
           <PhoneIcon size={32} />
           <span>Call Buddy</span>
         </button>

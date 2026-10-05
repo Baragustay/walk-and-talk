@@ -1,4 +1,5 @@
 import { useId, useRef } from 'react'
+import { prepareAudio } from '../../lib/live/audio/context'
 import { useNavigate } from 'react-router'
 import { BackIcon } from '../../components/Icons'
 import { MOTHER_TONGUES, TARGET_LANGUAGES } from '../../lib/languages'
@@ -70,7 +71,10 @@ export function Settings() {
           <p>
             Current level: <strong>{levelLabel(profile.level, profile.targetLanguage)}</strong>
           </p>
-          <button type="button" className="btn" onClick={() => navigate('/call?mode=level')}>
+          <button type="button" className="btn" onClick={() => {
+              prepareAudio()
+              navigate('/call?mode=level')
+            }}>
             Redo level call
           </button>
         </div>
