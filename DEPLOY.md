@@ -1,4 +1,4 @@
-# Deploy to Hostinger (buddy.barboragustafsson…)
+# Deploy to Hostinger (buddy.barboragustafsson.com)
 
 Same setup as Policy-translator: every push to `main` makes a GitHub Action build the site
 and push only the built files to a **`hostinger` branch**. Hostinger's Git deploy pulls that
