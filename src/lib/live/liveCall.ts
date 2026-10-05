@@ -79,6 +79,9 @@ export class LiveCall {
   private micChunks = 0
   private heartbeat: ReturnType<typeof setInterval> | null = null
   private ringing: { stop: () => void } | null = null
+  private hangUpTimer: ReturnType<typeof setInterval> | null = null
+  private lastAudioAt = 0
+  private turnCompletedAt = 0
 
   constructor(private opts: LiveCallOptions) {}
 
@@ -165,6 +168,23 @@ export class LiveCall {
       this.session?.sendClientContent({ turns: [{ role: 'user', parts: [{ text }] }], turnComplete: true })
     }
     trySend()
+  }
+
+  /**
+   * Buddy asked to hang up. Let its goodbye finish playing, then end the call.
+   * The goodbye may come before or after the tool call, so wait until audio has been
+   * quiet for a moment after a finished turn (or give up waiting after 15 s).
+   */
+  hangUpAfterGoodbye() {
+    if (this.hangUpTimer || this.ending) return
+    const askedAt = Date.now()
+    this.debug('buddy is hanging up')
+    this.hangUpTimer = setInterval(() => {
+      const now = Date.now()
+      const quiet = !this.player.playing && now - this.lastAudioAt > 1200
+      const turnDone = this.turnCompletedAt > askedAt || now - askedAt > 5000
+      if ((quiet && turnDone) || now - askedAt > 15_000) this.end()
+    }, 300)
   }
 
   /** Call from a tap if the browser blocked audio. */
@@ -306,6 +326,7 @@ export class LiveCall {
       for (const part of sc.modelTurn?.parts ?? []) {
         if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('audio/')) {
           this.turnHadAudio = true
+          this.lastAudioAt = Date.now()
           this.replyOwed = false
           this.nudged = false
           this.stopThinking()
@@ -321,6 +342,7 @@ export class LiveCall {
         // An empty turn (e.g. right after a tool call) doesn't count as an answer.
         if (this.turnHadAudio) this.stopThinking()
         this.turnHadAudio = false
+        this.turnCompletedAt = Date.now()
         this.closeBubble('buddy')
       }
     }
@@ -416,6 +438,8 @@ export class LiveCall {
     this.session = null
     this.ringing?.stop()
     this.ringing = null
+    if (this.hangUpTimer) clearInterval(this.hangUpTimer)
+    this.hangUpTimer = null
     this.mic?.stop()
     this.mic = null
     if (this.heartbeat) clearInterval(this.heartbeat)

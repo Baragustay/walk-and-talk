@@ -86,6 +86,10 @@ WORDS TO REVIEW TODAY
 TOPIC
 {topic_or_photo_notes}
 
+ENDING THE CALL
+- When they say goodbye or want to stop, say one short, warm goodbye, then call hang_up. The app ends the call after your goodbye.
+- Never call hang_up for any other reason.
+
 TIME
 - After about {walk_minutes} minutes, or when they say they're almost home, wrap up warmly.
 - Then call end_walk and quiz them out loud on 3 words from today, one at a time.
@@ -94,7 +98,7 @@ FIRST CALL ONLY
 - If {cefr_level} is "unknown", first ask in {mother_tongue}: have they learned any {target_language} before, and what can they say?
 - If nothing or almost nothing: don't quiz them. Check two or three very easy things (hello, thank you, a word that sounds like {mother_tongue}). Then call set_level with Pre-A1.
 - Otherwise start at step 1 of the ladder and move down or up as their answers show, for 3 to 5 minutes. Then call set_level with your best estimate and a short note.
-- After set_level, tell them their level kindly in {mother_tongue}. If they are Pre-A1, teach them two first phrases using the STEP 0 PLAYBOOK. Then say goodbye and let them hang up.`
+- After set_level, tell them their level kindly in {mother_tongue}. If they are Pre-A1, teach them two first phrases using the STEP 0 PLAYBOOK. Then say goodbye and call hang_up.`
 
 export interface PromptContext {
   motherTongue: string // language name in English, e.g. "Czech"

@@ -2,7 +2,14 @@ import { useEffect, useRef, useState } from 'react'
 import { languageName, targetLanguageName } from '../lib/languages'
 import { LiveCall, type CallSnapshot } from '../lib/live/liveCall'
 import { buildSystemPrompt, kickoffMessage, levelCallWrapUpCue, walkWrapUpCue } from '../lib/live/systemPrompt'
-import { parseLearningStyle, parseSetLevel, SET_LEVEL, UPDATE_LEARNING_STYLE, type ToolHandler } from '../lib/live/tools'
+import {
+  HANG_UP,
+  parseLearningStyle,
+  parseSetLevel,
+  SET_LEVEL,
+  UPDATE_LEARNING_STYLE,
+  type ToolHandler,
+} from '../lib/live/tools'
 import { updateProfile } from '../state/profile'
 import type { Level, Profile } from '../types'
 
@@ -55,6 +62,10 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         updateProfile({ learningStyle: prefs })
         return { saved: true }
       }
+      if (name === 'hang_up') {
+        c.hangUpAfterGoodbye()
+        return { ok: true, note: 'The call ends after your goodbye. If you have not said goodbye yet, say it now, briefly.' }
+      }
       return { error: `Unknown function ${name}` }
     }
 
@@ -62,7 +73,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
     const c: LiveCall = new LiveCall({
       systemPrompt,
       kickoff: kickoffMessage(isLevelCall, motherTongue, profile.learningStyle),
-      tools: isLevelCall ? [SET_LEVEL, UPDATE_LEARNING_STYLE] : [UPDATE_LEARNING_STYLE],
+      tools: isLevelCall ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP] : [UPDATE_LEARNING_STYLE, HANG_UP],
       onToolCall,
       onChange: (s) => call.current === c && setSnap(s),
     })

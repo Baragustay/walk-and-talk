@@ -24,6 +24,12 @@ export const SET_LEVEL: FunctionDeclaration = {
   },
 }
 
+export const HANG_UP: FunctionDeclaration = {
+  name: 'hang_up',
+  description:
+    'End the phone call. Use only when the user says goodbye or clearly wants to stop, or after you said goodbye at the end of a level call.',
+}
+
 export const MAX_STYLE_ITEMS = 8
 
 export const UPDATE_LEARNING_STYLE: FunctionDeclaration = {
