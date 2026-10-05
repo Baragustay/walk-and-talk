@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { PhoneIcon } from '../../components/Icons'
 import { useCallTimer, useLiveCall } from '../../hooks/useLiveCall'
+import { currentLesson } from '../../lib/course'
 import { formatTimer } from '../../lib/format'
 import { levelLabel } from '../../lib/levels'
 import type { CallError } from '../../lib/live/liveCall'
@@ -40,6 +41,11 @@ export function Call() {
   const profile = useProfile()
   const call = useLiveCall(profile, isLevelCall)
   const showLog = useCallDebug()
+  // Captured at the start, so finishing the lesson mid-call doesn't change the header.
+  const [lessonTitle] = useState(() => {
+    const l = isLevelCall ? null : currentLesson(profile)
+    return l ? `Lesson ${l.number}: ${l.lesson.title}` : null
+  })
   const seconds = useCallTimer(call.connectedAt, call.status === 'live' || call.status === 'reconnecting')
   const logEnd = useRef<HTMLDivElement>(null)
 
@@ -107,7 +113,7 @@ export function Call() {
   return (
     <div className={styles.page}>
       <header className={styles.top}>
-        <p className={styles.meta}>{isLevelCall ? 'Level call' : 'Free talk'}</p>
+        <p className={styles.meta}>{isLevelCall ? 'Level call' : (lessonTitle ?? 'Free talk')}</p>
         <p className={styles.meta}>
           <span className="visually-hidden">Call time </span>
           <time>{formatTimer(seconds)}</time>

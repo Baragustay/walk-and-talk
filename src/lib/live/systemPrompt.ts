@@ -1,4 +1,5 @@
 import type { Level, Word } from '../../types'
+import type { LessonPlan } from '../course'
 import { levelForPrompt } from '../levels'
 
 // Based on the build brief, with these changes:
@@ -88,6 +89,7 @@ TOPIC
 
 ENDING THE CALL
 - When they say goodbye or want to stop, say one short, warm goodbye, then call hang_up. The app ends the call after your goodbye.
+- Practising a goodbye phrase in {target_language} (like a word from the lesson) is not a goodbye. If you're not sure they want to end the call, ask in {mother_tongue}.
 - Never call hang_up for any other reason.
 
 TIME
@@ -110,6 +112,27 @@ export interface PromptContext {
   dueWords: Word[] // up to 3 are used
   topicNotes: string
   walkMinutes: number
+  /** Starter and A1: today's lesson from the course. Replaces free conversation. */
+  lesson?: LessonPlan | null
+}
+
+function formatLesson(plan: LessonPlan, motherTongue: string): string {
+  const phrases = (list: { target: string; meaning: string }[]) =>
+    list.map((p) => `- ${p.target} = ${p.meaning}`).join('\n')
+  return `TODAY'S LESSON (${plan.number} of ${plan.total}): ${plan.lesson.title}
+This call is a lesson, not free conversation. Follow this plan.
+Goal: by the end they can ${plan.lesson.canDo}.
+New phrases, in this order (meanings are in English; explain them in ${motherTongue}):
+${phrases(plan.lesson.phrases)}
+${plan.review.length ? `Review from earlier lessons:\n${phrases(plan.review)}` : 'Review: none, this is the first lesson.'}
+Walk idea: ${plan.lesson.walkIdea}
+How to run it:
+1. Review: ask for two or three earlier phrases with "How do you say ...?". Skip if there is no review.
+2. New: teach the new phrases one at a time, in order, with the STEP 0 PLAYBOOK. Have them repeat each one, then ask for it back.
+3. Practice: use the new phrases in tiny exchanges about their walk. Mix in the review phrases.
+4. Check: only after steps 1 to 3, ask for each new phrase once more with "How do you say ...?". Even if they already said the phrases earlier, do this check. When they can say most of them, call complete_lesson with id "${plan.lesson.id}", then tell them in ${motherTongue} what they can do now.
+After that, keep practising everything from this lesson and the review until the walk ends. Do not start new material.
+Stay with these phrases. Only add other words if they ask for them.`
 }
 
 function formatDueWords(words: Word[]): string {
@@ -131,7 +154,7 @@ export function buildSystemPrompt(c: PromptContext): string {
       : '- Nothing saved yet. Listen for what they tell you.',
     walk_count: String(c.walkCount),
     due_words: formatDueWords(c.dueWords),
-    topic_or_photo_notes: c.topicNotes,
+    topic_or_photo_notes: c.lesson ? formatLesson(c.lesson, c.motherTongue) : c.topicNotes,
     walk_minutes: String(c.walkMinutes),
   }
   return TEMPLATE.replace(/\{(\w+)\}/g, (match, key: string) => values[key] ?? match)
@@ -158,4 +181,13 @@ export function kickoffMessage(levelCall: boolean, motherTongue: string, learnin
     )
   }
   return `(The user has just called you. Pick up warmly, say hello, and ask one easy first question.${style})`
+}
+
+export function lessonKickoffMessage(plan: LessonPlan, motherTongue: string, learningStyle: string[] = []): string {
+  const style = learningStyle.length ? ` From your first sentence, remember: ${learningStyle.join('; ')}.` : ''
+  const start = plan.review.length ? 'start the review' : 'start with the first phrase'
+  return (
+    `(The user has just called you for lesson ${plan.number}: "${plan.lesson.title}". Say hello warmly, ` +
+    `tell them in ${motherTongue}, in one sentence, what they will be able to do after today, then ${start}.${style})`
+  )
 }

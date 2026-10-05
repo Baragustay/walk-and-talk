@@ -14,6 +14,8 @@ export interface Profile {
   showRomaji: boolean
   /** Not in the PRD: how this user wants Buddy to teach, saved by Buddy (update_learning_style) or edited in Settings. */
   learningStyle: string[]
+  /** Not in the PRD: lessons finished per target language (Starter and A1 course). */
+  courseProgress: Partial<Record<TargetLanguage, number>>
   createdAt: number
   /** Not in the PRD data model: set once onboarding is finished, so Home knows not to show it again. */
   onboarded: boolean

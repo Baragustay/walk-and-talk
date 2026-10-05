@@ -15,6 +15,7 @@ function defaultProfile(): Profile {
     walkMinutes: 20,
     showRomaji: true,
     learningStyle: [],
+    courseProgress: {},
     createdAt: Date.now(),
     onboarded: false,
   }
@@ -42,6 +43,11 @@ store.subscribe(() => {
 
 export function useProfile(): Profile {
   return useStore(store)
+}
+
+/** Current profile outside React (e.g. in tool handlers during a call). */
+export function getProfile(): Profile {
+  return store.get()
 }
 
 export function updateProfile(patch: Partial<Profile>) {

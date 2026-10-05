@@ -3,6 +3,7 @@ import { prepareAudio } from '../../lib/live/audio/context'
 import { Link, useNavigate } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { CameraIcon, CloseIcon, PhoneIcon } from '../../components/Icons'
+import { currentLesson } from '../../lib/course'
 import { plural } from '../../lib/format'
 import { TOPICS } from '../../lib/topics'
 import { dueWords, MOCK_WORDS } from '../../mock/data'
@@ -16,6 +17,7 @@ export function Home() {
   const { topic, photo } = useCallSetup()
   const fileInput = useRef<HTMLInputElement>(null)
   const topicsLabel = useId()
+  const lesson = currentLesson(profile)
   const due = dueWords(MOCK_WORDS[profile.targetLanguage]).length
 
   return (
@@ -31,6 +33,14 @@ export function Home() {
           <PhoneIcon size={32} />
           <span>Call Buddy</span>
         </button>
+        {lesson && (
+          <p className={styles.lesson}>
+            <span className="soft">
+              Lesson {lesson.number} of {lesson.total}
+            </span>
+            <strong>{lesson.lesson.title}</strong>
+          </p>
+        )}
         {due > 0 && (
           <p className={styles.due}>
             <Link to="/words">{plural(due, 'word', 'words')} to review today</Link>

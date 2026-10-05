@@ -30,6 +30,16 @@ export const HANG_UP: FunctionDeclaration = {
     'End the phone call. Use only when the user says goodbye or clearly wants to stop, or after you said goodbye at the end of a level call.',
 }
 
+export const COMPLETE_LESSON: FunctionDeclaration = {
+  name: 'complete_lesson',
+  description: "Mark today's lesson as done, when the user can say most of its new phrases. The next call starts the next lesson.",
+  parameters: {
+    type: Type.OBJECT,
+    properties: { lesson_id: { type: Type.STRING, description: "Today's lesson id, exactly as given." } },
+    required: ['lesson_id'],
+  },
+}
+
 export const MAX_STYLE_ITEMS = 8
 
 export const UPDATE_LEARNING_STYLE: FunctionDeclaration = {
