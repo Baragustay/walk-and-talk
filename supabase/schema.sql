@@ -10,6 +10,7 @@
 create table if not exists public.profiles (
   id               uuid primary key references auth.users (id) on delete cascade,
   mother_tongue    text not null default 'en',
+  age_range        text check (age_range in ('18-24', '25-34', '35-44', '45-54', '55-64', '65+')),
   target_language  text not null default 'sv' check (target_language in ('sv', 'es', 'ja')),
   level            text not null default 'unknown'
                    check (level in ('unknown', 'preA1', 'A1', 'A2', 'B1', 'B2', 'C1')),
@@ -22,6 +23,10 @@ create table if not exists public.profiles (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now()
 );
+
+-- Added after the first version of this file; harmless if the column exists.
+alter table public.profiles add column if not exists age_range text
+  check (age_range in ('18-24', '25-34', '35-44', '45-54', '55-64', '65+'));
 
 -- ---------------------------------------------------------------------------
 -- walks: one row per call

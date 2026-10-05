@@ -22,7 +22,7 @@ export function Languages() {
 
   return (
     <OnboardingStep
-      step={2}
+      step={3}
       title="Your languages"
       footer={
         <button type="button" className="btn btn-primary btn-block" onClick={next}>

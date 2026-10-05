@@ -4,6 +4,7 @@ import { Account } from './screens/Account/Account'
 import { Call } from './screens/Call/Call'
 import { Home } from './screens/Home/Home'
 import { Me } from './screens/Me/Me'
+import { AboutYou } from './screens/Onboarding/AboutYou'
 import { HowItWorks } from './screens/Onboarding/HowItWorks'
 import { Languages } from './screens/Onboarding/Languages'
 import { LevelIntro } from './screens/Onboarding/LevelIntro'
@@ -16,6 +17,7 @@ import { Words } from './screens/Words/Words'
 const router = createBrowserRouter([
   // Full screen, no tab bar
   { path: '/welcome', element: <Welcome /> },
+  { path: '/onboarding/about', element: <AboutYou /> },
   { path: '/onboarding/languages', element: <Languages /> },
   { path: '/onboarding/how', element: <HowItWorks /> },
   { path: '/onboarding/meet', element: <MeetBuddy /> },

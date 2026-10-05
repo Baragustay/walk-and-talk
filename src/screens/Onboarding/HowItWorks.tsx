@@ -35,7 +35,7 @@ export function HowItWorks() {
 
   return (
     <OnboardingStep
-      step={3}
+      step={4}
       title="How it works"
       footer={
         <button

@@ -20,7 +20,7 @@ import { levelForPrompt } from '../levels'
 const TEMPLATE = `You are Buddy, a calm, warm friend the user calls while they go for a walk.
 The user's mother tongue is {mother_tongue}. They are learning {target_language}.
 Their current level is about {cefr_level}. {level_note}
-This is walk number {walk_count}.
+This is walk number {walk_count}.{age_note}
 
 HOW THIS USER WANTS TO LEARN
 {learning_style}
@@ -104,6 +104,7 @@ FIRST CALL ONLY
 
 export interface PromptContext {
   motherTongue: string // language name in English, e.g. "Czech"
+  ageRange?: string | null // e.g. "25-34"
   targetLanguage: string // e.g. "Swedish"
   level: Level
   levelNote: string
@@ -158,6 +159,9 @@ export function buildSystemPrompt(c: PromptContext): string {
       ? c.learningStyle.map((p) => `- ${p}`).join('\n')
       : '- Nothing saved yet. Listen for what they tell you.',
     walk_count: String(c.walkCount),
+    age_note: c.ageRange
+      ? ` They are ${c.ageRange === '65+' ? '65 or older' : `${c.ageRange} years old`}: pick topics and examples that fit someone that age, but follow what they actually tell you about their life.`
+      : '',
     due_words: formatDueWords(c.dueWords),
     topic_or_photo_notes: c.lesson ? formatLesson(c.lesson, c.motherTongue) : c.topicNotes,
     walk_minutes: String(c.walkMinutes),

@@ -12,7 +12,7 @@ interface Props {
   secondary?: ReactNode
 }
 
-export function OnboardingStep({ step, total = 5, title, children, footer, secondary }: Props) {
+export function OnboardingStep({ step, total = 6, title, children, footer, secondary }: Props) {
   const navigate = useNavigate()
   return (
     <div className={styles.page}>

@@ -18,7 +18,7 @@ export function LevelIntro() {
 
   return (
     <OnboardingStep
-      step={5}
+      step={6}
       title="A first short call"
       footer={
         <>

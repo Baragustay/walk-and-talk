@@ -10,6 +10,7 @@ function defaultProfile(): Profile {
   return {
     id: 'me',
     motherTongue: guessMotherTongue(),
+    ageRange: null,
     targetLanguage: 'sv',
     level: 'unknown',
     levelNote: '',

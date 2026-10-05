@@ -47,6 +47,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
     const lesson = isLevelCall ? null : currentLesson(profile)
     const systemPrompt = buildSystemPrompt({
       motherTongue,
+      ageRange: profile.ageRange,
       targetLanguage: targetLanguageName(profile.targetLanguage),
       level: isLevelCall ? 'unknown' : profile.level,
       levelNote: isLevelCall ? '' : profile.levelNote,

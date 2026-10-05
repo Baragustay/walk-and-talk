@@ -3,6 +3,7 @@
 //   (e.g. signing in on a new phone). If not, save the local profile as the first row.
 // - After that, every local change is saved (debounced).
 import { supabase } from '../lib/supabase'
+import type { AgeRange } from '../lib/age'
 import type { Level, Profile, TargetLanguage } from '../types'
 import { getAuth, onAuthChange } from './auth'
 import { getProfile, replaceProfile, subscribeProfile } from './profile'
@@ -10,6 +11,7 @@ import { getProfile, replaceProfile, subscribeProfile } from './profile'
 interface ProfileRow {
   id: string
   mother_tongue: string
+  age_range: AgeRange | null
   target_language: TargetLanguage
   level: Level
   level_note: string
@@ -25,6 +27,7 @@ function toRow(p: Profile, userId: string): Omit<ProfileRow, 'created_at'> {
   return {
     id: userId,
     mother_tongue: p.motherTongue,
+    age_range: p.ageRange,
     target_language: p.targetLanguage,
     level: p.level,
     level_note: p.levelNote,
@@ -40,6 +43,7 @@ function fromRow(r: ProfileRow): Profile {
   return {
     id: 'me',
     motherTongue: r.mother_tongue,
+    ageRange: r.age_range,
     targetLanguage: r.target_language,
     level: r.level,
     levelNote: r.level_note,

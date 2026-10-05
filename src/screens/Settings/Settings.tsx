@@ -3,6 +3,7 @@ import { prepareAudio } from '../../lib/live/audio/context'
 import { useNavigate } from 'react-router'
 import { BackIcon, CloseIcon } from '../../components/Icons'
 import { MOTHER_TONGUES, TARGET_LANGUAGES } from '../../lib/languages'
+import { AGE_RANGES, type AgeRange } from '../../lib/age'
 import { levelLabel } from '../../lib/levels'
 import { MAX_STYLE_ITEMS } from '../../lib/live/tools'
 import { setCallDebug, useCallDebug } from '../../state/debug'
@@ -21,7 +22,7 @@ export function Settings() {
   const [deleteError, setDeleteError] = useState(false)
   const [newWish, setNewWish] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
-  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId(), wish: useId() }
+  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId(), wish: useId(), age: useId() }
 
   const confirmDelete = async () => {
     try {
@@ -78,6 +79,26 @@ export function Settings() {
             {TARGET_LANGUAGES.map((l) => (
               <option key={l.code} value={l.code}>
                 {l.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      </section>
+
+      <section className={styles.group} aria-labelledby="about-title">
+        <h2 id="about-title" className="section-title">About you</h2>
+        <div className={styles.field}>
+          <label htmlFor={ids.age}>Age</label>
+          <select
+            id={ids.age}
+            className={styles.select}
+            value={profile.ageRange ?? ''}
+            onChange={(e) => updateProfile({ ageRange: (e.target.value || null) as AgeRange | null })}
+          >
+            <option value="">Not set</option>
+            {AGE_RANGES.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
               </option>
             ))}
           </select>

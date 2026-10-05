@@ -27,7 +27,7 @@ export function MeetBuddy() {
 
   return (
     <OnboardingStep
-      step={4}
+      step={5}
       title="Say hi to Buddy"
       footer={
         <>

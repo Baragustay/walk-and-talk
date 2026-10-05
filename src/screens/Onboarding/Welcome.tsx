@@ -12,7 +12,7 @@ export function Welcome() {
       step={1}
       title="Hi, I'm Buddy"
       footer={
-        <button type="button" className="btn btn-primary btn-block" onClick={() => navigate('/onboarding/languages')}>
+        <button type="button" className="btn btn-primary btn-block" onClick={() => navigate('/onboarding/about')}>
           Let's start
         </button>
       }
