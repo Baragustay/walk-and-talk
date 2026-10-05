@@ -1,77 +1,44 @@
-# Deploy to Hostinger (buddy.barboragustafsson.com)
+# Deploy (buddy.barboragustafsson.com)
 
-Same setup as Policy-translator: every push to `main` makes a GitHub Action build the site
-and push only the built files to a **`hostinger` branch**. Hostinger's Git deploy pulls that
-branch into the subdomain's folder.
+Two parts:
 
-Unlike Policy-translator, this app has one piece of server code: `api/live-token.php`,
-which swaps the secret Gemini key for a short-lived token. The key itself is never in GitHub.
+| Part | Where | How it updates |
+| --- | --- | --- |
+| The website (static files) | Hostinger | Automatically on every push to `main` |
+| The token server + database | Supabase | Database: `supabase/schema.sql`. Token server: deploy command below |
 
-## 1. Put the code on GitHub (once)
+The Gemini key lives only in Supabase's encrypted secrets. Nothing secret is on Hostinger or GitHub.
 
-Create an empty repo on github.com (e.g. `Baragustay/walk-and-talk`, private is fine), then:
+## Website: Hostinger (already set up)
 
-```sh
-git remote add origin https://github.com/Baragustay/walk-and-talk.git
-git push -u origin main
-```
+Every push to `main` makes a GitHub Action build the site and push only the built files to the
+**`hostinger` branch**. Hostinger's Git deploy (Advanced → Git, branch `hostinger`, auto deployment
+on) pulls it into `public_html/buddy`. `public/.htaccess` sends http to https and app routes like
+`/call` to `index.html`.
 
-Open the repo's **Actions** tab: "Build for Hostinger" should run and create the `hostinger`
-branch. If it fails with a permission error: Settings → Actions → General → Workflow
-permissions → **Read and write permissions**, then re-run it.
+Hostinger replaces everything in the site folder on each deploy, so never put files there by hand.
 
-## 2. Subdomain and https (once)
+## Token server: Supabase Edge Function
 
-1. hPanel → **Domains → Subdomains**: create `buddy`. Note its folder (for example
-   `public_html/buddy`, or `domains/buddy.barboragustafsson.com/public_html`).
-2. hPanel → **Security → SSL**: make sure the subdomain has SSL. The microphone only works over https.
-
-## 3. Git deploy (once)
-
-hPanel → **Advanced → Git**:
-
-| Setting    | Value                                                      |
-| ---------- | ---------------------------------------------------------- |
-| Repository | `https://github.com/Baragustay/walk-and-talk.git`          |
-| Branch     | `hostinger`                                                |
-| Directory  | the subdomain folder from step 2 (it must be empty at first deploy) |
-
-For a private repo, Hostinger shows an SSH key: add it on GitHub under the repo's
-Settings → **Deploy keys**, and use the `git@github.com:…` address instead.
-
-Click **Deploy**. Turn on **Auto deployment** and add the webhook it shows to GitHub
-(repo Settings → Webhooks), so each build deploys by itself.
-
-## 4. The Gemini key (once)
-
-In hPanel **File Manager**, go to **`domains/barboragustafsson.com`** (the folder that
-*contains* `public_html`). Create a file named **`buddy-secrets.php`**:
-
-> Never put it inside the site folder (`public_html/buddy`): Hostinger's Git deploy replaces
-> everything in there on each deploy, and the file disappears. If the key is missing, the token
-> endpoint's error says which folder it expects.
-
-```php
-<?php return 'PASTE-YOUR-GEMINI-KEY-HERE';
-```
-
-Why it's safe: it lives outside the site folder, it's not in Git, and even if someone
-requested it, PHP would run it and send back nothing.
-
-## 5. Check it works
+`supabase/functions/live-token/index.ts` checks the login, then asks Google for a short-lived
+Gemini Live token. After changing it, deploy from the project folder:
 
 ```sh
-curl -X POST https://buddy.barboragustafsson.com/.netlify/functions/live-token
+npx supabase functions deploy live-token --no-verify-jwt --project-ref uatijscirvcpmeasclih
 ```
 
-You should get `{"token":"auth_tokens/…","model":"gemini-3.8-live",…}`.
-`Server is missing the Gemini API key` means step 4's file isn't found.
-Then open the site on your phone and call Buddy.
+(`--no-verify-jwt` because the function checks the login itself.) The CLI needs a one-time
+`npx supabase login` in the Terminal app.
 
-## How it fits together
+Changing the Gemini key:
 
-- `public/.htaccess`: http → https, sends `/.netlify/functions/live-token` (the path the app
-  calls) to `api/live-token.php`, and sends app routes like `/call` to `index.html`.
-- `public/api/live-token.php`: the PHP twin of `netlify/functions/live-token.ts`. If you
-  change the model or token lifetime, change both.
-- File Manager hides dotfiles; turn on "Show hidden files" to see `.htaccess`.
+```sh
+npx supabase secrets set GEMINI_API_KEY=... --project-ref uatijscirvcpmeasclih
+```
+
+If you add another web address for the app, add it to `ALLOWED_ORIGINS` in the function.
+
+## Check it works
+
+The app calls `https://uatijscirvcpmeasclih.supabase.co/functions/v1/live-token`. Without a login
+it answers `{"error":"Please log in"}` (401). That's correct.

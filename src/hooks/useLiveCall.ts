@@ -20,6 +20,7 @@ import {
   UPDATE_LEARNING_STYLE,
   type ToolHandler,
 } from '../lib/live/tools'
+import { liveTokenUrl, supabaseAnonKey } from '../lib/supabase'
 import { accessToken } from '../state/auth'
 import { getProfile, updateProfile } from '../state/profile'
 import { recordWalk, useWalks } from '../state/walks'
@@ -150,7 +151,14 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP]
         : [UPDATE_LEARNING_STYLE, HANG_UP, SAVE_WORD, MARK_RECALL, ...(lesson ? [COMPLETE_LESSON] : [])],
       onToolCall,
-      getAuthToken: accessToken,
+      requestToken: async () => {
+        if (!liveTokenUrl) throw new Error('Supabase is not configured')
+        const auth = await accessToken()
+        return fetch(liveTokenUrl, {
+          method: 'POST',
+          headers: { apikey: supabaseAnonKey, ...(auth ? { Authorization: `Bearer ${auth}` } : {}) },
+        })
+      },
       onChange: (s) => call.current === c && setSnap(s),
     })
     call.current = c

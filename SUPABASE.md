@@ -53,6 +53,11 @@ accounts that may log in as test users.
 Both are public by design (the database rules protect the data), so it's fine to paste them in
 chat. Never send the **service_role / secret** key. The app doesn't need it.
 
+## 6. Token server (done)
+
+The Gemini token server is a Supabase Edge Function, with the key stored as a Supabase secret.
+See `DEPLOY.md` for how to redeploy it or change the key.
+
 ## Good to know
 
 - Supabase's built-in email sender only allows a few emails per hour: fine for testing. Before

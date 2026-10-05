@@ -1,6 +1,6 @@
 # Builds the site and pushes only the built files (the contents of dist/) to the
 # `hostinger` branch. Hostinger's Git deploy pulls that branch into the subdomain's
-# folder, so index.html, .htaccess and api/live-token.php sit in the document root.
+# folder, so index.html and .htaccess sit in the document root.
 name: Build for Hostinger
 
 on:

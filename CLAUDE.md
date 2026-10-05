@@ -29,8 +29,8 @@ Full product decisions live in the PRD (Walk & Talk PRD v3). This file is the bu
 - **Data:** Supabase (Postgres + Auth, EU region). Profile cached in localStorage for instant start. Decided Oct 2026, replacing the earlier Dexie/no-backend plan. Setup in `SUPABASE.md`.
 - **Accounts:** try first (anonymous Supabase account), then "Keep your progress" with Google or an email magic link. The token server only serves logged-in users (trial accounts included).
 - **AI:** Gemini Live API through the official `@google/genai` SDK. Check the current Gemini docs for the newest native-audio Live model and use that. Don't guess the model name.
-- **Token server:** one small serverless function (Netlify Functions) that creates short-lived ephemeral tokens for the Live API. The client never sees the real key.
-- **Hosting:** Hostinger at buddy.barboragustafsson.com (GitHub Action builds a `hostinger` branch; PHP token endpoint). See `DEPLOY.md`. Netlify config kept for local dev.
+- **Token server:** a Supabase Edge Function (`supabase/functions/live-token`) creates short-lived ephemeral tokens for the Live API. The Gemini key is a Supabase secret; the client never sees it. (Moved from Netlify/PHP in Oct 2026.)
+- **Hosting:** Hostinger at buddy.barboragustafsson.com, static files only (GitHub Action builds a `hostinger` branch). See `DEPLOY.md`.
 
 ---
 
@@ -167,7 +167,7 @@ Put all of this in `src/lib/live/`, separate from UI.
 - **Audio out:** 24 kHz PCM from Gemini, played through Web Audio with a small buffer queue.
 - **Transcripts:** turn on input and output transcription so the bubbles can show both sides.
 - **Buddy state:** derive from the stream. User audio detected → listening. User finished, nothing back yet → thinking. Audio playing → talking.
-- **Auth:** fetch an ephemeral token from `/.netlify/functions/live-token` before each call.
+- **Auth:** fetch an ephemeral token from the Supabase function `live-token` before each call (sends the user's login).
 
 ### Tools (function calling)
 

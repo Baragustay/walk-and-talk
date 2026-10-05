@@ -1,4 +1,4 @@
-# Walk & Talk on Hostinger (Apache / LiteSpeed). Netlify ignores this file.
+# Walk & Talk on Hostinger (Apache / LiteSpeed): static files only. Tokens come from Supabase.
 Options -MultiViews
 RewriteEngine On
 
@@ -7,18 +7,6 @@ RewriteEngine On
 RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-
-# Never serve the key file, even if it was put inside the site folder by mistake
-<Files "buddy-secrets.php">
-  Require all denied
-</Files>
-
-# Pass the login header through to PHP (some servers drop it otherwise)
-RewriteCond %{HTTP:Authorization} .
-RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
-
-# The app asks for tokens at the Netlify path; on Hostinger the PHP file answers.
-RewriteRule ^\.netlify/functions/live-token$ api/live-token.php [L]
 
 # Serve real files and folders as they are
 RewriteCond %{REQUEST_FILENAME} -f [OR]
