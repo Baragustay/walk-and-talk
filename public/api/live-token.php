@@ -64,7 +64,12 @@ if ($apiKey === '') {
     }
   }
 }
-if ($apiKey === '') reply(500, ['error' => 'Server is missing the Gemini API key']);
+if ($apiKey === '') {
+  // Say where the file belongs (last two folder names only, nothing secret). It must be
+  // OUTSIDE the site folder: Hostinger's Git deploy replaces everything inside it.
+  $parent = implode('/', array_slice(explode('/', dirname(dirname(__DIR__))), -2));
+  reply(500, ['error' => 'Server is missing the Gemini API key', 'put_buddy_secrets_php_in' => $parent]);
+}
 
 $now = time();
 $expiresAt = $now + TOKEN_LIFETIME_MINUTES * 60;
