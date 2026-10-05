@@ -11,8 +11,9 @@ export const SET_LEVEL: FunctionDeclaration = {
     properties: {
       cefr_band: {
         type: Type.STRING,
-        enum: ['A1', 'A2', 'B1', 'B2', 'C1'],
-        description: 'CEFR band. For Japanese, map JLPT: N5=A1, N4=A2, N3=B1, N2=B2, N1=C1.',
+        enum: ['Pre-A1', 'A1', 'A2', 'B1', 'B2', 'C1'],
+        description:
+          'CEFR band. Pre-A1 = knows almost nothing yet. For Japanese, map JLPT: N5=A1, N4=A2, N3=B1, N2=B2, N1=C1.',
       },
       note: {
         type: Type.STRING,
@@ -52,12 +53,12 @@ export function parseLearningStyle(args: Record<string, unknown> | undefined): s
     .slice(0, MAX_STYLE_ITEMS)
 }
 
-const BANDS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const
+const BANDS: Record<string, Level> = { 'PRE-A1': 'preA1', A1: 'A1', A2: 'A2', B1: 'B1', B2: 'B2', C1: 'C1' }
 
 export function parseSetLevel(args: Record<string, unknown> | undefined): { level: Level; note: string } | null {
-  const band = String(args?.cefr_band ?? '').toUpperCase()
-  if (!(BANDS as readonly string[]).includes(band)) return null
-  return { level: band as Level, note: String(args?.note ?? '').slice(0, 300) }
+  const level = BANDS[String(args?.cefr_band ?? '').toUpperCase().trim()]
+  if (!level) return null
+  return { level, note: String(args?.note ?? '').slice(0, 300) }
 }
 
 export type ToolHandler = (name: string, args: Record<string, unknown> | undefined) => Record<string, unknown>

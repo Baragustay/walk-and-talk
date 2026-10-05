@@ -1,5 +1,6 @@
 export type TargetLanguage = 'sv' | 'es' | 'ja'
-export type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'unknown'
+// 'preA1' is not in the PRD: CEFR Companion Volume (2020) Pre-A1, for people who know nothing yet.
+export type Level = 'preA1' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'unknown'
 export type WordReason = 'taught' | 'asked' | 'repeated_mistake'
 export type Topic = 'free' | 'daily' | 'food' | 'travel' | 'work'
 
