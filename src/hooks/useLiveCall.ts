@@ -18,6 +18,7 @@ import {
   UPDATE_LEARNING_STYLE,
   type ToolHandler,
 } from '../lib/live/tools'
+import { accessToken } from '../state/auth'
 import { getProfile, updateProfile } from '../state/profile'
 import type { Level, Profile } from '../types'
 
@@ -96,6 +97,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP]
         : [UPDATE_LEARNING_STYLE, HANG_UP, ...(lesson ? [COMPLETE_LESSON] : [])],
       onToolCall,
+      getAuthToken: accessToken,
       onChange: (s) => call.current === c && setSnap(s),
     })
     call.current = c

@@ -6,7 +6,8 @@ import { MOTHER_TONGUES, TARGET_LANGUAGES } from '../../lib/languages'
 import { levelLabel } from '../../lib/levels'
 import { MAX_STYLE_ITEMS } from '../../lib/live/tools'
 import { setCallDebug, useCallDebug } from '../../state/debug'
-import { deleteAllData, updateProfile, useProfile } from '../../state/profile'
+import { deleteAccount, signOut, useAuth } from '../../state/auth'
+import { resetLocalProfile, updateProfile, useProfile } from '../../state/profile'
 import type { TargetLanguage } from '../../types'
 import styles from './Settings.module.css'
 
@@ -16,13 +17,27 @@ export function Settings() {
   const navigate = useNavigate()
   const profile = useProfile()
   const callDebug = useCallDebug()
+  const auth = useAuth()
+  const [deleteError, setDeleteError] = useState(false)
   const [newWish, setNewWish] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
   const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId(), wish: useId() }
 
-  const confirmDelete = () => {
-    deleteAllData()
+  const confirmDelete = async () => {
+    try {
+      await deleteAccount() // server copy first; stop if that fails, so nothing is half-deleted
+    } catch {
+      setDeleteError(true)
+      return
+    }
+    resetLocalProfile()
     dialog.current?.close()
+    navigate('/welcome', { replace: true })
+  }
+
+  const logOut = async () => {
+    await signOut()
+    resetLocalProfile()
     navigate('/welcome', { replace: true })
   }
 
@@ -192,7 +207,23 @@ export function Settings() {
 
       <section className={styles.group} aria-labelledby="data-title">
         <h2 id="data-title" className="section-title">Your data</h2>
-        <p className="soft">Everything stays on this device.</p>
+        {auth.status === 'disabled' && <p className="soft">Everything stays on this device.</p>}
+        {(auth.status === 'none' || auth.status === 'anonymous') && (
+          <>
+            <p className="soft">Your progress is only on this phone for now.</p>
+            <button type="button" className="btn" onClick={() => navigate('/account')}>
+              Keep your progress
+            </button>
+          </>
+        )}
+        {auth.status === 'signedIn' && (
+          <>
+            <p className="soft">Signed in{auth.email ? ` as ${auth.email}` : ''}. Your progress is saved.</p>
+            <button type="button" className="btn" onClick={logOut}>
+              Sign out
+            </button>
+          </>
+        )}
         <button type="button" className={`btn ${styles.danger}`} onClick={() => dialog.current?.showModal()}>
           Delete my data
         </button>
@@ -200,7 +231,15 @@ export function Settings() {
 
       <dialog ref={dialog} className={styles.dialog} aria-labelledby="del-title" aria-describedby="del-desc">
         <h2 id="del-title">Delete everything?</h2>
-        <p id="del-desc">Your words, walks and settings will be removed from this device. This can't be undone.</p>
+        <p id="del-desc">
+          Your account, words, walks and settings will be deleted{auth.status === 'disabled' ? ' from this device' : ''}. This
+          can't be undone.
+        </p>
+        {deleteError && (
+          <p role="alert" className={styles.deleteError}>
+            Couldn't delete right now. Check your connection and try again.
+          </p>
+        )}
         <div className={styles.dialogActions}>
           <button type="button" className="btn" onClick={() => dialog.current?.close()} autoFocus>
             Keep my data

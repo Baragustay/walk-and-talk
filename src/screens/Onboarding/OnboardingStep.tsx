@@ -9,9 +9,10 @@ interface Props {
   title: string
   children: ReactNode
   footer: ReactNode
+  secondary?: ReactNode
 }
 
-export function OnboardingStep({ step, total = 5, title, children, footer }: Props) {
+export function OnboardingStep({ step, total = 5, title, children, footer, secondary }: Props) {
   const navigate = useNavigate()
   return (
     <div className={styles.page}>
@@ -37,7 +38,10 @@ export function OnboardingStep({ step, total = 5, title, children, footer }: Pro
         <h1>{title}</h1>
         {children}
       </main>
-      <footer className={styles.footer}>{footer}</footer>
+      <footer className={styles.footer}>
+        {footer}
+        {secondary}
+      </footer>
     </div>
   )
 }

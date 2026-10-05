@@ -26,10 +26,11 @@ Full product decisions live in the PRD (Walk & Talk PRD v3). This file is the bu
 - **Frontend:** React + TypeScript + Vite. Mobile-first, installable as a PWA.
 - **Styling:** CSS modules or plain CSS with custom properties (design tokens below). No UI library.
 - **Routing:** React Router.
-- **Local data:** IndexedDB via Dexie. No backend database yet.
+- **Data:** Supabase (Postgres + Auth, EU region). Profile cached in localStorage for instant start. Decided Oct 2026, replacing the earlier Dexie/no-backend plan. Setup in `SUPABASE.md`.
+- **Accounts:** try first (anonymous Supabase account), then "Keep your progress" with Google or an email magic link. The token server only serves logged-in users (trial accounts included).
 - **AI:** Gemini Live API through the official `@google/genai` SDK. Check the current Gemini docs for the newest native-audio Live model and use that. Don't guess the model name.
 - **Token server:** one small serverless function (Netlify Functions) that creates short-lived ephemeral tokens for the Live API. The client never sees the real key.
-- **Hosting:** Netlify.
+- **Hosting:** Hostinger at buddy.barboragustafsson.com (GitHub Action builds a `hostinger` branch; PHP token endpoint). See `DEPLOY.md`. Netlify config kept for local dev.
 
 ---
 
@@ -253,5 +254,5 @@ Stop after each phase and tell me how to test it.
 ## Known limits (don't try to solve these in the prototype)
 
 - Mobile browsers may stop the microphone when the screen locks. Keep the screen on during calls. Pocket mode comes with the native app.
-- No accounts, no sync. Everything lives on the device.
+- Accounts and sync via Supabase (see above). No push notifications yet.
 - No push notifications yet.

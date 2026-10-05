@@ -7,6 +7,7 @@ import { currentLesson } from '../../lib/course'
 import { formatTimer } from '../../lib/format'
 import { levelLabel } from '../../lib/levels'
 import type { CallError } from '../../lib/live/liveCall'
+import { pathAfterOnboarding } from '../../state/auth'
 import { useCallDebug } from '../../state/debug'
 import { updateProfile, useProfile } from '../../state/profile'
 import styles from './Call.module.css'
@@ -57,25 +58,22 @@ export function Call() {
 
   // Leaving a level call always finishes onboarding. If Buddy never set a level and
   // there's none from before, start at A1 (same as "Skip for now").
-  const finishLevelCall = () => {
+  // Returns where to go next: first-time users are offered to save their progress.
+  const finishLevelCall = (): string => {
+    const firstTime = !profile.onboarded
     if (!call.levelResult && profile.level === 'unknown') {
       updateProfile({ level: 'A1', levelNote: 'Level call ended before Buddy decided' })
     }
     updateProfile({ onboarded: true })
+    return firstTime ? pathAfterOnboarding() : '/'
   }
 
   const endCall = () => {
     call.end()
-    if (isLevelCall) {
-      finishLevelCall()
-      navigate('/', { replace: true })
-    }
+    if (isLevelCall) navigate(finishLevelCall(), { replace: true })
   }
 
-  const leave = () => {
-    if (isLevelCall) finishLevelCall()
-    navigate('/', { replace: true })
-  }
+  const leave = () => navigate(isLevelCall ? finishLevelCall() : '/', { replace: true })
 
   if (call.status === 'error' && call.error) {
     const e = ERRORS[call.error]

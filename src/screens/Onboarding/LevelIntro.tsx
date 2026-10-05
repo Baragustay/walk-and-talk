@@ -2,6 +2,7 @@ import { prepareAudio } from '../../lib/live/audio/context'
 import { useNavigate } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { targetLanguageName } from '../../lib/languages'
+import { pathAfterOnboarding } from '../../state/auth'
 import { updateProfile, useProfile } from '../../state/profile'
 import { OnboardingStep } from './OnboardingStep'
 import styles from './Onboarding.module.css'
@@ -12,7 +13,7 @@ export function LevelIntro() {
 
   const skip = () => {
     updateProfile({ level: 'A1', levelNote: 'Skipped level call', onboarded: true })
-    navigate('/', { replace: true })
+    navigate(pathAfterOnboarding(), { replace: true })
   }
 
   return (

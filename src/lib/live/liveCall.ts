@@ -39,6 +39,8 @@ export interface LiveCallOptions {
   /** Runs Buddy's function calls; the returned object goes back to Buddy as the result. */
   onToolCall?: ToolHandler
   onChange: (s: CallSnapshot) => void
+  /** Login token for our token endpoint (null when accounts aren't set up). */
+  getAuthToken?: () => Promise<string | null>
 }
 
 // If Buddy hasn't answered after real words (or a tool call), nudge it once, then give up.
@@ -197,7 +199,11 @@ export class LiveCall {
 
   private async fetchToken(): Promise<boolean> {
     try {
-      const res = await fetch('/.netlify/functions/live-token', { method: 'POST' })
+      const auth = await this.opts.getAuthToken?.()
+      const res = await fetch('/.netlify/functions/live-token', {
+        method: 'POST',
+        headers: auth ? { Authorization: `Bearer ${auth}` } : {},
+      })
       if (!res.ok) return false
       const body = await res.json()
       this.token = { value: body.token, model: body.model, expiresAt: body.expiresAt }

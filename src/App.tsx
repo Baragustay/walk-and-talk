@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
 import { TabLayout } from './components/TabLayout'
+import { Account } from './screens/Account/Account'
 import { Call } from './screens/Call/Call'
 import { Home } from './screens/Home/Home'
 import { Me } from './screens/Me/Me'
@@ -20,6 +21,7 @@ const router = createBrowserRouter([
   { path: '/onboarding/meet', element: <MeetBuddy /> },
   { path: '/onboarding/level', element: <LevelIntro /> },
   { path: '/call', element: <Call /> },
+  { path: '/account', element: <Account /> },
   { path: '/words/review', element: <Flashcards /> },
   // With tab bar (redirects to onboarding if not done)
   {

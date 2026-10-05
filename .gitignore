@@ -3,6 +3,8 @@ dist
 .env
 .env.*
 !.env.example
+# Only public values (Supabase URL and anon key); read by the GitHub build
+!.env.production
 .netlify
 .DS_Store
 *.log

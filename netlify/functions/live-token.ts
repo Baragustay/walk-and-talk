@@ -9,12 +9,26 @@ const json = (body: unknown, status = 200) =>
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   })
 
+/** Asks Supabase whether the bearer token belongs to a real user. True when Supabase isn't set up. */
+async function isLoggedIn(req: Request): Promise<boolean> {
+  const url = process.env.VITE_SUPABASE_URL
+  const anonKey = process.env.VITE_SUPABASE_ANON_KEY
+  if (!url || !anonKey) return true
+  const auth = req.headers.get('authorization')
+  if (!auth?.startsWith('Bearer ')) return false
+  const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anonKey, Authorization: auth } })
+  return res.ok
+}
+
 export default async function handler(req: Request): Promise<Response> {
   if (req.method !== 'POST') return json({ error: 'Use POST' }, 405)
 
   // Only our own pages may ask. (Not bulletproof: non-browser clients can fake Origin.)
   const origin = req.headers.get('origin')
   if (origin && new URL(origin).host !== new URL(req.url).host) return json({ error: 'Forbidden' }, 403)
+
+  // With accounts set up, only logged-in users (including trial accounts) get tokens.
+  if (!(await isLoggedIn(req))) return json({ error: 'Please log in' }, 401)
 
   const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) return json({ error: 'Server is missing GEMINI_API_KEY' }, 500)

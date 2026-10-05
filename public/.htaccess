@@ -8,6 +8,10 @@ RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# Pass the login header through to PHP (some servers drop it otherwise)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
 # The app asks for tokens at the Netlify path; on Hostinger the PHP file answers.
 RewriteRule ^\.netlify/functions/live-token$ api/live-token.php [L]
 

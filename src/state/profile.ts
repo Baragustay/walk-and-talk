@@ -1,4 +1,5 @@
-// PHASE 1 STAND-IN: keeps the profile in localStorage. Phase 2 replaces this with Dexie.
+// The profile lives in localStorage (instant start, works offline) and, when Supabase is set
+// up, in the `profiles` table too. See profileSync.ts for the server side.
 import type { Profile } from '../types'
 import { guessMotherTongue } from '../lib/languages'
 import { createStore, useStore } from './createStore'
@@ -54,7 +55,17 @@ export function updateProfile(patch: Partial<Profile>) {
   store.set((p) => ({ ...p, ...patch }))
 }
 
-export function deleteAllData() {
+/** Replace the whole profile (e.g. with the copy from the server after signing in). */
+export function replaceProfile(profile: Profile) {
+  store.set(profile)
+}
+
+export function subscribeProfile(listener: () => void) {
+  return store.subscribe(listener)
+}
+
+/** Forget everything on this device. */
+export function resetLocalProfile() {
   try {
     localStorage.removeItem(KEY)
   } catch {

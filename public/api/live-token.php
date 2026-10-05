@@ -26,6 +26,22 @@ if ($origin !== '' && parse_url($origin, PHP_URL_HOST) !== strtok($_SERVER['HTTP
   reply(403, ['error' => 'Forbidden']);
 }
 
+// With accounts set up, only logged-in users (including trial accounts) get tokens.
+// config.php is written by the build from .env.production (public values only).
+$config = is_file(__DIR__ . '/config.php') ? (include __DIR__ . '/config.php') : [];
+if (!empty($config['supabase_url']) && !empty($config['supabase_anon_key'])) {
+  $auth = $_SERVER['HTTP_AUTHORIZATION'] ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION'] ?? '';
+  if (stripos($auth, 'Bearer ') !== 0) reply(401, ['error' => 'Please log in']);
+  $ch = curl_init(rtrim($config['supabase_url'], '/') . '/auth/v1/user');
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_TIMEOUT => 10,
+    CURLOPT_HTTPHEADER => ['apikey: ' . $config['supabase_anon_key'], 'Authorization: ' . $auth],
+  ]);
+  curl_exec($ch);
+  if (curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) reply(401, ['error' => 'Please log in']);
+}
+
 $apiKey = getenv('GEMINI_API_KEY') ?: '';
 if ($apiKey === '') {
   foreach ([dirname(__DIR__, 2) . '/buddy-secrets.php', dirname(__DIR__) . '/buddy-secrets.php'] as $file) {

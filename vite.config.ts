@@ -37,11 +37,29 @@ function netlifyFunctionsDev(): Plugin {
   }
 }
 
+// Writes dist/api/config.php so the Hostinger token endpoint knows the (public) Supabase values.
+function phpConfig(): Plugin {
+  return {
+    name: 'php-config',
+    apply: 'build',
+    generateBundle() {
+      const php = (v?: string) => `'${(v ?? '').replace(/[\\']/g, '')}'`
+      this.emitFile({
+        type: 'asset',
+        fileName: 'api/config.php',
+        source:
+          `<?php // Generated at build time. Public values only.\n` +
+          `return ['supabase_url' => ${php(process.env.VITE_SUPABASE_URL)}, 'supabase_anon_key' => ${php(process.env.VITE_SUPABASE_ANON_KEY)}];\n`,
+      })
+    },
+  }
+}
+
 export default defineConfig(({ mode }) => {
   // Make .env values (like GEMINI_API_KEY) visible to functions in dev. Server side only.
   Object.assign(process.env, loadEnv(mode, process.cwd(), ''))
   return {
-    plugins: [react(), netlifyFunctionsDev()],
+    plugins: [react(), netlifyFunctionsDev(), phpConfig()],
     // host: true exposes the dev server on your local network so you can open it on your phone.
     // `npm run dev:https` uses the self-signed cert in .certs/ (phones only allow the mic over https).
     server: {
