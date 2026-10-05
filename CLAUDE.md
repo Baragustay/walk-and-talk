@@ -254,5 +254,5 @@ Stop after each phase and tell me how to test it.
 ## Known limits (don't try to solve these in the prototype)
 
 - Mobile browsers may stop the microphone when the screen locks. Keep the screen on during calls. Pocket mode comes with the native app.
-- Accounts and sync via Supabase (see above). No push notifications yet.
+- Accounts and sync via Supabase (see above).
 - No push notifications yet.
