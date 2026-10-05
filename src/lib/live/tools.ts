@@ -23,6 +23,35 @@ export const SET_LEVEL: FunctionDeclaration = {
   },
 }
 
+export const MAX_STYLE_ITEMS = 8
+
+export const UPDATE_LEARNING_STYLE: FunctionDeclaration = {
+  name: 'update_learning_style',
+  description:
+    'Save how this user wants to learn, so every future call follows it. Send the COMPLETE updated list each time; it replaces the old one.',
+  parameters: {
+    type: Type.OBJECT,
+    properties: {
+      preferences: {
+        type: Type.ARRAY,
+        items: { type: Type.STRING },
+        description:
+          `Up to ${MAX_STYLE_ITEMS} short instructions to yourself, in English, e.g. "Speak slowly, with pauses", "Have them repeat each new phrase after you, often".`,
+      },
+    },
+    required: ['preferences'],
+  },
+}
+
+export function parseLearningStyle(args: Record<string, unknown> | undefined): string[] | null {
+  const list = args?.preferences
+  if (!Array.isArray(list)) return null
+  return list
+    .map((p) => String(p).trim().slice(0, 160))
+    .filter(Boolean)
+    .slice(0, MAX_STYLE_ITEMS)
+}
+
 const BANDS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const
 
 export function parseSetLevel(args: Record<string, unknown> | undefined): { level: Level; note: string } | null {

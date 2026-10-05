@@ -1,9 +1,10 @@
-import { useId, useRef } from 'react'
+import { useId, useRef, useState } from 'react'
 import { prepareAudio } from '../../lib/live/audio/context'
 import { useNavigate } from 'react-router'
-import { BackIcon } from '../../components/Icons'
+import { BackIcon, CloseIcon } from '../../components/Icons'
 import { MOTHER_TONGUES, TARGET_LANGUAGES } from '../../lib/languages'
 import { levelLabel } from '../../lib/levels'
+import { MAX_STYLE_ITEMS } from '../../lib/live/tools'
 import { setCallDebug, useCallDebug } from '../../state/debug'
 import { deleteAllData, updateProfile, useProfile } from '../../state/profile'
 import type { TargetLanguage } from '../../types'
@@ -15,8 +16,9 @@ export function Settings() {
   const navigate = useNavigate()
   const profile = useProfile()
   const callDebug = useCallDebug()
+  const [newWish, setNewWish] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
-  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId() }
+  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId(), wish: useId() }
 
   const confirmDelete = () => {
     deleteAllData()
@@ -80,6 +82,56 @@ export function Settings() {
             Redo level call
           </button>
         </div>
+      </section>
+
+      <section className={styles.group} aria-labelledby="style-title">
+        <h2 id="style-title" className="section-title">How Buddy teaches you</h2>
+        <p className="soft">
+          Tell Buddy during a call, like “speak slower” or “make me repeat after you”. Buddy remembers it here.
+        </p>
+        {profile.learningStyle.length > 0 && (
+          <ul className={styles.wishes}>
+            {profile.learningStyle.map((wish, i) => (
+              <li key={i} className={styles.wish}>
+                <span>{wish}</span>
+                <button
+                  type="button"
+                  className={styles.back}
+                  aria-label={`Remove: ${wish}`}
+                  onClick={() => updateProfile({ learningStyle: profile.learningStyle.filter((_, j) => j !== i) })}
+                >
+                  <CloseIcon />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {profile.learningStyle.length < MAX_STYLE_ITEMS && (
+          <form
+            className={styles.addWish}
+            onSubmit={(e) => {
+              e.preventDefault()
+              const wish = newWish.trim()
+              if (!wish) return
+              updateProfile({ learningStyle: [...profile.learningStyle, wish.slice(0, 160)] })
+              setNewWish('')
+            }}
+          >
+            <label htmlFor={ids.wish} className="visually-hidden">
+              Add a wish
+            </label>
+            <input
+              id={ids.wish}
+              className={styles.select}
+              value={newWish}
+              onChange={(e) => setNewWish(e.target.value)}
+              placeholder="e.g. Speak slowly"
+            />
+            <button type="submit" className="btn">
+              Add
+            </button>
+          </form>
+        )}
       </section>
 
       <section className={styles.group} aria-labelledby="walk-title">

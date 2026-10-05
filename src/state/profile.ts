@@ -14,6 +14,7 @@ function defaultProfile(): Profile {
     levelNote: '',
     walkMinutes: 20,
     showRomaji: true,
+    learningStyle: [],
     createdAt: Date.now(),
     onboarded: false,
   }

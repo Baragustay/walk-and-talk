@@ -40,7 +40,10 @@ export interface LiveCallOptions {
   onChange: (s: CallSnapshot) => void
 }
 
-const THINKING_TIMEOUT_MS = 10_000
+// If Buddy hasn't answered after real words (or a tool call), nudge it once, then give up.
+const NUDGE_AFTER_MS = 8_000
+const GIVE_UP_AFTER_MS = 10_000
+const NUDGE = '(The user is waiting for your reply. Please continue.)'
 
 export class LiveCall {
   private snap: CallSnapshot = {
@@ -66,6 +69,10 @@ export class LiveCall {
   private userSpeaking = false
   private awaitingReplySince: number | null = null
   private thinkingTimer: ReturnType<typeof setTimeout> | null = null
+  /** The user said actual words (or a tool ran) since Buddy last spoke, so a reply is owed. */
+  private replyOwed = false
+  private nudged = false
+  private turnHadAudio = false
 
   constructor(private opts: LiveCallOptions) {}
 
@@ -226,6 +233,8 @@ export class LiveCall {
     if (vaType) this.debug(vaType === 'ACTIVITY_START' ? 'you: speaking' : 'you: stopped')
     if (vaType === 'ACTIVITY_START') {
       this.userSpeaking = true
+      this.awaitingReplySince = null
+      if (this.thinkingTimer) clearTimeout(this.thinkingTimer)
       this.closeBubble('buddy')
     } else if (vaType === 'ACTIVITY_END') {
       this.userSpeaking = false
@@ -244,6 +253,8 @@ export class LiveCall {
         return { id: fc.id, name: fc.name, response }
       })
       this.session?.sendToolResponse({ functionResponses })
+      this.replyOwed = true
+      this.startThinking()
     }
 
     const sc = m.serverContent
@@ -254,9 +265,15 @@ export class LiveCall {
         this.player.clear()
         this.closeBubble('buddy')
       }
-      if (sc.inputTranscription?.text) this.appendText('user', sc.inputTranscription.text)
+      if (sc.inputTranscription?.text) {
+        this.replyOwed = true
+        this.appendText('user', sc.inputTranscription.text)
+      }
       for (const part of sc.modelTurn?.parts ?? []) {
         if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('audio/')) {
+          this.turnHadAudio = true
+          this.replyOwed = false
+          this.nudged = false
           this.stopThinking()
           this.closeBubble('user')
           this.player.enqueue(part.inlineData.data)
@@ -267,7 +284,9 @@ export class LiveCall {
         this.appendText('buddy', sc.outputTranscription.text)
       }
       if (sc.turnComplete) {
-        this.stopThinking()
+        // An empty turn (e.g. right after a tool call) doesn't count as an answer.
+        if (this.turnHadAudio) this.stopThinking()
+        this.turnHadAudio = false
         this.closeBubble('buddy')
       }
     }
@@ -279,8 +298,22 @@ export class LiveCall {
   private startThinking() {
     this.awaitingReplySince = Date.now()
     if (this.thinkingTimer) clearTimeout(this.thinkingTimer)
-    // If no reply comes (e.g. it was just a noise), go back to listening.
-    this.thinkingTimer = setTimeout(() => this.stopThinking(), THINKING_TIMEOUT_MS)
+    this.thinkingTimer = setTimeout(() => this.onReplyLate(), NUDGE_AFTER_MS)
+  }
+
+  /** No answer yet. Real words → nudge Buddy once. Just a noise → go back to listening. */
+  private onReplyLate() {
+    if (this.ending || this.userSpeaking || this.player.playing) return
+    if (this.replyOwed && !this.nudged && this.snap.status === 'live') {
+      this.nudged = true
+      this.debug('no reply, nudging')
+      this.session?.sendClientContent({ turns: [{ role: 'user', parts: [{ text: NUDGE }] }], turnComplete: true })
+      this.thinkingTimer = setTimeout(() => this.onReplyLate(), GIVE_UP_AFTER_MS)
+      return
+    }
+    if (this.nudged) this.debug('still no reply')
+    this.replyOwed = false
+    this.stopThinking()
   }
 
   private stopThinking() {

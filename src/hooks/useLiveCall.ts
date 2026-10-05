@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { languageName, targetLanguageName } from '../lib/languages'
 import { LiveCall, type CallSnapshot } from '../lib/live/liveCall'
 import { buildSystemPrompt, kickoffMessage, levelCallWrapUpCue, walkWrapUpCue } from '../lib/live/systemPrompt'
-import { parseSetLevel, SET_LEVEL, type ToolHandler } from '../lib/live/tools'
+import { parseLearningStyle, parseSetLevel, SET_LEVEL, UPDATE_LEARNING_STYLE, type ToolHandler } from '../lib/live/tools'
 import { updateProfile } from '../state/profile'
 import type { Level, Profile } from '../types'
 
@@ -33,6 +33,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       targetLanguage: targetLanguageName(profile.targetLanguage),
       level: isLevelCall ? 'unknown' : profile.level,
       levelNote: isLevelCall ? '' : profile.levelNote,
+      learningStyle: profile.learningStyle,
       // TODO(phase 2): real walk count and due words from Dexie. No fake words until then.
       walkCount: 1,
       dueWords: [],
@@ -48,14 +49,20 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         setLevelResult(result)
         return { saved: true }
       }
+      if (name === 'update_learning_style') {
+        const prefs = parseLearningStyle(args)
+        if (!prefs) return { error: 'preferences must be a list of short strings' }
+        updateProfile({ learningStyle: prefs })
+        return { saved: true }
+      }
       return { error: `Unknown function ${name}` }
     }
 
     // Only the current call may update the screen (React dev mode mounts twice).
     const c: LiveCall = new LiveCall({
       systemPrompt,
-      kickoff: kickoffMessage(isLevelCall, motherTongue),
-      tools: isLevelCall ? [SET_LEVEL] : [],
+      kickoff: kickoffMessage(isLevelCall, motherTongue, profile.learningStyle),
+      tools: isLevelCall ? [SET_LEVEL, UPDATE_LEARNING_STYLE] : [UPDATE_LEARNING_STYLE],
       onToolCall,
       onChange: (s) => call.current === c && setSnap(s),
     })
