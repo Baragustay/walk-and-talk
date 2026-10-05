@@ -42,10 +42,20 @@ if (!empty($config['supabase_url']) && !empty($config['supabase_anon_key'])) {
   if (curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) reply(401, ['error' => 'Please log in']);
 }
 
+// Look for buddy-secrets.php just above the site folder (preferred), two levels up, or
+// in the site folder itself. Read it as text, never `include` it: if someone wrote just the
+// bare key in the file, include would print the key into this response.
 $apiKey = getenv('GEMINI_API_KEY') ?: '';
 if ($apiKey === '') {
-  foreach ([dirname(__DIR__, 2) . '/buddy-secrets.php', dirname(__DIR__) . '/buddy-secrets.php'] as $file) {
-    if (is_file($file)) { $apiKey = trim((string) (include $file)); break; }
+  $site = dirname(__DIR__);
+  foreach ([dirname($site) . '/buddy-secrets.php', dirname($site, 2) . '/buddy-secrets.php', $site . '/buddy-secrets.php'] as $file) {
+    if (!is_readable($file)) continue;
+    $text = (string) file_get_contents($file);
+    // Accepts  <?php return 'KEY';   or just  KEY
+    if (preg_match('/[\'"]([A-Za-z0-9_\-]{20,})[\'"]/', $text, $m) || preg_match('/([A-Za-z0-9_\-]{30,})/', $text, $m)) {
+      $apiKey = $m[1];
+      break;
+    }
   }
 }
 if ($apiKey === '') reply(500, ['error' => 'Server is missing the Gemini API key']);

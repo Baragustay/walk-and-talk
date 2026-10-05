@@ -8,6 +8,11 @@ RewriteCond %{HTTPS} !=on
 RewriteCond %{HTTP:X-Forwarded-Proto} !=https
 RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
+# Never serve the key file, even if it was put inside the site folder by mistake
+<Files "buddy-secrets.php">
+  Require all denied
+</Files>
+
 # Pass the login header through to PHP (some servers drop it otherwise)
 RewriteCond %{HTTP:Authorization} .
 RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
