@@ -36,8 +36,8 @@ export function LevelIntro() {
     >
       <Buddy state="idle" size={200} />
       <p className={styles.lead}>
-        Let's chat in {targetLanguageName(profile.targetLanguage)} for 3 to 5 minutes, so I know where to start. Sitting
-        down is fine.
+        I'll ask you how to say a few things in {targetLanguageName(profile.targetLanguage)}, so I know where to start.
+        Not knowing is completely fine. It takes a few minutes, wherever you are.
       </p>
     </OnboardingStep>
   )

@@ -19,8 +19,13 @@ export const SET_LEVEL: FunctionDeclaration = {
         type: Type.STRING,
         description: 'One short sentence on what they can and cannot do yet, in English.',
       },
+      start_lesson: {
+        type: Type.INTEGER,
+        description:
+          'From the placement test: the number of the first item they missed (1 if they missed the first). Use 1 if there was no placement test.',
+      },
     },
-    required: ['cefr_band', 'note'],
+    required: ['cefr_band', 'note', 'start_lesson'],
   },
 }
 
@@ -71,10 +76,17 @@ export function parseLearningStyle(args: Record<string, unknown> | undefined): s
 
 const BANDS: Record<string, Level> = { 'PRE-A1': 'preA1', A1: 'A1', A2: 'A2', B1: 'B1', B2: 'B2', C1: 'C1' }
 
-export function parseSetLevel(args: Record<string, unknown> | undefined): { level: Level; note: string } | null {
+export function parseSetLevel(
+  args: Record<string, unknown> | undefined,
+): { level: Level; note: string; startLesson: number | null } | null {
   const level = BANDS[String(args?.cefr_band ?? '').toUpperCase().trim()]
   if (!level) return null
-  return { level, note: String(args?.note ?? '').slice(0, 300) }
+  const start = Number(args?.start_lesson)
+  return {
+    level,
+    note: String(args?.note ?? '').slice(0, 300),
+    startLesson: Number.isInteger(start) && start >= 1 ? start : null,
+  }
 }
 
 export type ToolHandler = (name: string, args: Record<string, unknown> | undefined) => Record<string, unknown>

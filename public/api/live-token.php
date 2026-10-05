@@ -38,8 +38,13 @@ if (!empty($config['supabase_url']) && !empty($config['supabase_anon_key'])) {
     CURLOPT_TIMEOUT => 10,
     CURLOPT_HTTPHEADER => ['apikey: ' . $config['supabase_anon_key'], 'Authorization: ' . $auth],
   ]);
-  curl_exec($ch);
-  if (curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200) reply(401, ['error' => 'Please log in']);
+  $user = json_decode((string) curl_exec($ch), true);
+  if (curl_getinfo($ch, CURLINFO_HTTP_CODE) !== 200 || !is_array($user)) reply(401, ['error' => 'Please log in']);
+  // Trial (anonymous) accounts may only call during their first half hour: enough for the level call.
+  $trialMinutes = 30;
+  if (!empty($user['is_anonymous']) && time() - strtotime($user['created_at'] ?? '') > $trialMinutes * 60) {
+    reply(401, ['error' => 'Please log in']);
+  }
 }
 
 // Look for buddy-secrets.php just above the site folder (preferred), two levels up, or

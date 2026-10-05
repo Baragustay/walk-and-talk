@@ -94,8 +94,13 @@ export async function deleteAccount() {
   await supabase.auth.signOut()
 }
 
-/** After onboarding: offer "Keep your progress" unless accounts are off or already saved. */
+/** After onboarding: saving progress (logging in) is required, unless accounts are off. */
 export function pathAfterOnboarding(): string {
   const s = store.get().status
   return s === 'disabled' || s === 'signedIn' ? '/' : '/account?from=onboarding'
+}
+
+/** Accounts are on but this person hasn't logged in (trial account or none). */
+export function needsLogin(s: AuthState): boolean {
+  return s.status === 'none' || s.status === 'anonymous'
 }

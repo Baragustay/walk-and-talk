@@ -8,6 +8,7 @@ import { AboutYou } from './screens/Onboarding/AboutYou'
 import { HowItWorks } from './screens/Onboarding/HowItWorks'
 import { Languages } from './screens/Onboarding/Languages'
 import { LevelIntro } from './screens/Onboarding/LevelIntro'
+import { LevelResult } from './screens/Onboarding/LevelResult'
 import { MeetBuddy } from './screens/Onboarding/MeetBuddy'
 import { Welcome } from './screens/Onboarding/Welcome'
 import { Settings } from './screens/Settings/Settings'
@@ -22,6 +23,7 @@ const router = createBrowserRouter([
   { path: '/onboarding/how', element: <HowItWorks /> },
   { path: '/onboarding/meet', element: <MeetBuddy /> },
   { path: '/onboarding/level', element: <LevelIntro /> },
+  { path: '/onboarding/result', element: <LevelResult /> },
   { path: '/call', element: <Call /> },
   { path: '/account', element: <Account /> },
   { path: '/words/review', element: <Flashcards /> },

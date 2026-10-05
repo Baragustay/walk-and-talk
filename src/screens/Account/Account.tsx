@@ -96,7 +96,9 @@ export function Account() {
       <p className="soft">
         {signIn
           ? 'Sign in to pick up where you left off.'
-          : 'Save your level, lessons and words, so they’re here next time, on any device.'}
+          : fromOnboarding
+            ? 'Save your level and plan to start your lessons. It’s free and takes a moment.'
+            : 'Save your level, lessons and words, so they’re here next time, on any device.'}
       </p>
 
       <button type="button" className="btn btn-block" onClick={google} disabled={busy}>
@@ -131,11 +133,6 @@ export function Account() {
         </p>
       )}
 
-      {fromOnboarding && (
-        <button type="button" className="link-btn" onClick={done}>
-          Not now
-        </button>
-      )}
       <p className={styles.small}>
         For adults (18+). We only store what Buddy needs to teach you. No voice recordings.
       </p>

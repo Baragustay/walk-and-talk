@@ -65,7 +65,8 @@ export function Call() {
       updateProfile({ level: 'A1', levelNote: 'Level call ended before Buddy decided' })
     }
     updateProfile({ onboarded: true })
-    return firstTime ? pathAfterOnboarding() : '/'
+    // Show the results and plan; first-timers then go on to save their progress.
+    return `/onboarding/result?next=${encodeURIComponent(firstTime ? pathAfterOnboarding() : '/')}`
   }
 
   const endCall = () => {
@@ -74,6 +75,11 @@ export function Call() {
   }
 
   const leave = () => navigate(isLevelCall ? finishLevelCall() : '/', { replace: true })
+
+  // A level call that ended (e.g. Buddy hung up after the feedback) goes straight to the results.
+  useEffect(() => {
+    if (isLevelCall && call.status === 'ended') leave()
+  }, [isLevelCall, call.status])
 
   if (call.status === 'error' && call.error) {
     const e = ERRORS[call.error]
@@ -96,7 +102,7 @@ export function Call() {
     return (
       <div className={styles.endPage}>
         <Buddy state="waving" size={220} />
-        <h1>Nice walk!</h1>
+        <h1>Nice call!</h1>
         <p className="soft">You talked for {Math.max(1, Math.round(seconds / 60))} min.</p>
         <button type="button" className="btn btn-primary btn-block" onClick={leave}>
           Back home

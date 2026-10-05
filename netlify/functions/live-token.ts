@@ -9,6 +9,9 @@ const json = (body: unknown, status = 200) =>
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   })
 
+// Trial (anonymous) accounts may only call during their first half hour: enough for the level call.
+const TRIAL_MINUTES = 30
+
 /** Asks Supabase whether the bearer token belongs to a real user. True when Supabase isn't set up. */
 async function isLoggedIn(req: Request): Promise<boolean> {
   const url = process.env.VITE_SUPABASE_URL
@@ -17,7 +20,10 @@ async function isLoggedIn(req: Request): Promise<boolean> {
   const auth = req.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) return false
   const res = await fetch(`${url}/auth/v1/user`, { headers: { apikey: anonKey, Authorization: auth } })
-  return res.ok
+  if (!res.ok) return false
+  const user = (await res.json()) as { is_anonymous?: boolean; created_at?: string }
+  if (!user.is_anonymous) return true
+  return Date.now() - Date.parse(user.created_at ?? '') < TRIAL_MINUTES * 60_000
 }
 
 export default async function handler(req: Request): Promise<Response> {

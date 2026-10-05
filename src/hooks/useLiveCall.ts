@@ -8,7 +8,7 @@ import {
   levelCallWrapUpCue,
   walkWrapUpCue,
 } from '../lib/live/systemPrompt'
-import { completeLesson, currentLesson } from '../lib/course'
+import { completeLesson, courseFor, currentLesson, progressFromPlacement } from '../lib/course'
 import {
   COMPLETE_LESSON,
   HANG_UP,
@@ -58,13 +58,18 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       topicNotes: 'Free talk. Follow whatever the user wants to talk about.',
       walkMinutes: isLevelCall ? 5 : profile.walkMinutes,
       lesson,
+      placementCourse: isLevelCall ? courseFor(profile.targetLanguage) : null,
     })
 
     const onToolCall: ToolHandler = (name, args) => {
       if (name === 'set_level') {
         const result = parseSetLevel(args)
         if (!result) return { error: 'cefr_band must be one of A1, A2, B1, B2, C1' }
-        updateProfile({ level: result.level, levelNote: result.note })
+        updateProfile({
+          level: result.level,
+          levelNote: result.note,
+          ...(result.startLesson ? { courseProgress: progressFromPlacement(getProfile(), result.startLesson) } : {}),
+        })
         setLevelResult(result)
         return { saved: true }
       }

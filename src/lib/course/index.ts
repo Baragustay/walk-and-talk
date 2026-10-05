@@ -11,6 +11,18 @@ const COURSES: Partial<Record<TargetLanguage, Lesson[]>> = { es: SPANISH_COURSE,
 /** Starter and A1 learners follow the course; from A2 up it's conversation. */
 const COURSE_LEVELS: Level[] = ['preA1', 'A1']
 
+export function courseFor(lang: TargetLanguage): Lesson[] | null {
+  return COURSES[lang] ?? null
+}
+
+/** Course progress after a placement test that says to start at lesson `startLesson` (1-based). */
+export function progressFromPlacement(profile: Profile, startLesson: number): Profile['courseProgress'] {
+  const course = COURSES[profile.targetLanguage]
+  if (!course) return profile.courseProgress
+  const done = Math.min(Math.max(startLesson - 1, 0), course.length)
+  return { ...profile.courseProgress, [profile.targetLanguage]: done }
+}
+
 export interface LessonPlan {
   lesson: Lesson
   number: number // 1-based
