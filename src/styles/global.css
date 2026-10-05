@@ -1,0 +1,132 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font);
+  font-size: var(--text-md);
+  line-height: 1.5;
+  color: var(--ink);
+  /* Texture image is optional: if it's missing, the colour shows. */
+  background: var(--paper) url("/textures/paper.png") repeat;
+  background-size: 512px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#root { min-height: 100dvh; }
+
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: var(--text-xl); line-height: 1.25; font-weight: 700; }
+h2 { font-size: var(--text-lg); line-height: 1.3; font-weight: 700; }
+h3 { font-size: var(--text-md); font-weight: 700; }
+
+button, input, select { font: inherit; color: inherit; }
+img { max-width: 100%; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+.soft { color: var(--ink-soft); }
+
+/* A screen inside the tab layout or full-screen flow */
+.screen {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: calc(var(--space-5) + env(safe-area-inset-top)) var(--space-5) var(--space-6);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+/* Buttons */
+.btn {
+  min-height: var(--tap);
+  min-width: var(--tap);
+  padding: var(--space-3) var(--space-5);
+  border: 2px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 700;
+  font-size: var(--text-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  color: var(--ink);
+}
+.btn:active { transform: translateY(1px); }
+.btn-primary { background: var(--ink); color: var(--paper); }
+.btn-block { width: 100%; }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+/* Text-style button/link, still 48px tall */
+.link-btn {
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  background: none;
+  border: 0;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card {
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+}
+
+/* Chips: a radio group styled as pills */
+.chips { display: flex; flex-wrap: wrap; gap: var(--space-2); border: 0; padding: 0; margin: 0; }
+.chip { position: relative; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span {
+  display: inline-flex; align-items: center;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 1.5px solid var(--ink);
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 600;
+}
+.chip input:checked + span { background: var(--chip-on); color: var(--chip-on-text); }
+.chip input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* Switch (checkbox) row */
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  min-height: var(--tap);
+}
+.switch { appearance: none; width: 52px; height: 32px; border-radius: 999px; border: 2px solid var(--ink);
+  background: var(--surface); position: relative; cursor: pointer; flex-shrink: 0; margin: 0; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%;
+  background: var(--ink); transition: transform var(--fade); }
+.switch:checked { background: var(--call); }
+.switch:checked::after { transform: translateX(20px); }
+
+.section-title { font-size: var(--text-sm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; scroll-behavior: auto !important; }
+}

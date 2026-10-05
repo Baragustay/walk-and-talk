@@ -1,0 +1,36 @@
+.wrap {
+  position: relative;
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+
+.layer {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+}
+
+.placeholder {
+  inset: 10%;
+  width: 80%;
+  height: 80%;
+  border-radius: 50%;
+  background: var(--bubble-buddy);
+  border: 2px solid var(--ink);
+}
+
+.fadeIn {
+  animation: fade var(--fade) ease-out both;
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.fadeOut {
+  animation: fade var(--fade) ease-in reverse both;
+}

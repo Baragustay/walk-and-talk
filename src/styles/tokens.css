@@ -1,0 +1,41 @@
+:root {
+  /* From the build brief */
+  --paper: #FBF7EF;          /* fallback behind the paper texture */
+  --ink: #2B2622;            /* main text, placeholder until final pick */
+  --ink-soft: #5E5650;       /* secondary text */
+  --bubble-buddy: #F5C1A2;   /* Buddy's chat bubbles, always */
+  --bubble-user: #A2B4F9;    /* user's chat bubbles, always */
+  --radius: 16px;
+
+  /* Added in phase 1 — placeholders, change freely. All carry --ink text at AA contrast. */
+  --call: #A8D8B0;           /* Call Buddy button */
+  --end: #F2B0A6;            /* End call button */
+  --surface: #FFFDF8;        /* cards on paper */
+  --line: #D9CFC2;           /* hairlines, card borders */
+  --focus: #2B2622;          /* focus ring */
+  --chip-on: #2B2622;        /* selected chip background */
+  --chip-on-text: #FBF7EF;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+
+  --tap: 48px;               /* minimum tap target */
+  --tabbar-h: 64px;
+
+  --font: ui-rounded, "SF Pro Rounded", "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.625rem;
+
+  --fade: 350ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --fade: 0ms; }
+}

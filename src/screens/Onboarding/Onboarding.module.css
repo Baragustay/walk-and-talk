@@ -1,0 +1,163 @@
+.page {
+  min-height: 100dvh;
+  max-width: 560px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) var(--space-5) env(safe-area-inset-bottom);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 64px;
+}
+
+.back {
+  width: var(--tap);
+  height: var(--tap);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.progress { display: flex; }
+.dots { display: flex; gap: 8px; }
+.dot, .dotOn { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid var(--ink); }
+.dotOn { background: var(--ink); }
+
+.body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-top: var(--space-4);
+  text-align: center;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-5) 0 var(--space-5);
+}
+
+.lead {
+  font-size: var(--text-lg);
+  color: var(--ink-soft);
+}
+
+/* Languages */
+.left { text-align: left; display: flex; flex-direction: column; gap: var(--space-3); }
+
+.search {
+  width: 100%;
+  min-height: var(--tap);
+  padding: 0 var(--space-4);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.langList {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1);
+  max-height: 34dvh;
+  overflow-y: auto;
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--tap);
+  padding: 0 var(--space-3);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.option input { width: 22px; height: 22px; accent-color: var(--ink); margin: 0; flex-shrink: 0; }
+.option:has(input:checked) { background: var(--bubble-user); }
+.native { color: var(--ink-soft); margin-left: auto; }
+.option:has(input:checked) .native { color: var(--ink); }
+
+.fieldset { border: 0; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.legend { padding: 0; margin-bottom: var(--space-3); font-weight: 700; font-size: var(--text-lg); }
+
+.bigOption {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: 64px;
+  padding: 0 var(--space-4);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius);
+  background: var(--surface);
+  font-weight: 700;
+  font-size: var(--text-lg);
+  cursor: pointer;
+}
+.bigOption input { width: 22px; height: 22px; accent-color: var(--ink); margin: 0; }
+.bigOption:has(input:checked) { background: var(--bubble-buddy); }
+.bigOption:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 3px; }
+
+/* How it works carousel */
+.carousel {
+  display: flex;
+  gap: var(--space-4);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  margin: 0 calc(-1 * var(--space-5));
+  padding: var(--space-2) var(--space-5);
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar { display: none; }
+
+.howCard {
+  flex: 0 0 100%;
+  scroll-snap-align: center;
+  min-height: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-6) var(--space-5);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  border-radius: var(--radius);
+}
+.howNum {
+  width: 48px; height: 48px; border-radius: 50%;
+  background: var(--bubble-buddy);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: var(--text-lg);
+}
+.howText { font-size: var(--text-lg); font-weight: 600; }
+
+.pager { display: flex; justify-content: center; gap: var(--space-1); }
+.pagerDot {
+  width: var(--tap); height: var(--tap);
+  border: 0; background: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+.pagerDot::after { content: ""; width: 10px; height: 10px; border-radius: 50%; border: 1.5px solid var(--ink); }
+.pagerDot[aria-current="true"]::after { background: var(--ink); }
+
+.note {
+  padding: var(--space-4);
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1.5px solid var(--line);
+  text-align: left;
+}
