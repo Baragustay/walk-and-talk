@@ -1,5 +1,12 @@
 // One phone call with Buddy over the Gemini Live API. No React in here.
-import { GoogleGenAI, Modality, type FunctionDeclaration, type LiveServerMessage, type Session } from '@google/genai'
+import {
+  GoogleGenAI,
+  Modality,
+  type AudioTranscriptionConfig,
+  type FunctionDeclaration,
+  type LiveServerMessage,
+  type Session,
+} from '@google/genai'
 import type { BuddyState } from '../../components/Buddy/buddyImages'
 import { keepScreenOn, releaseScreen } from '../wakeLock'
 import { playHangup, playPickup, RING_CYCLE_S, startRinging } from './audio/callSounds'
@@ -39,11 +46,16 @@ export interface LiveCallOptions {
   /** Runs Buddy's function calls; the returned object goes back to Buddy as the result. */
   onToolCall?: ToolHandler
   onChange: (s: CallSnapshot) => void
+  /** Hints for transcribing the user: expected languages and vocabulary. */
+  transcription?: AudioTranscriptionConfig
   /** What to tell Buddy when the user stays quiet (1st, 2nd, 3rd time). null = say nothing. */
   onSilence?: (count: number) => string | null
   /** Asks our token server for a Gemini token (the server checks the login). */
   requestToken: () => Promise<Response>
 }
+
+// 40 ms of 16 kHz 16-bit silence, base64 (640 zero samples)
+const SILENCE_40MS = btoa(String.fromCharCode(...new Uint8Array(1280)))
 
 // If Buddy hasn't answered after real words (or a tool call), nudge it once, then give up.
 const NUDGE_AFTER_MS = 8_000
@@ -64,7 +76,11 @@ export class LiveCall {
   private session: Session | null = null
   private sessionGen = 0
   private mic: Mic | null = null
-  private player = new PcmPlayer(() => this.updateBuddyState())
+  private playbackEndedAt = 0
+  private player = new PcmPlayer((playing) => {
+    if (!playing) this.playbackEndedAt = Date.now()
+    this.updateBuddyState()
+  })
   private token: { value: string; model: string; expiresAt: number } | null = null
   private resumeHandle: string | undefined
   private ending = false
@@ -230,7 +246,7 @@ export class LiveCall {
         config: {
           responseModalities: [Modality.AUDIO],
           systemInstruction: this.opts.systemPrompt,
-          inputAudioTranscription: {},
+          inputAudioTranscription: this.opts.transcription ?? {},
           outputAudioTranscription: {},
           // Audio sessions stop at 15 min without this; walks can be 30.
           contextWindowCompression: { slidingWindow: {} },
@@ -279,7 +295,12 @@ export class LiveCall {
 
   private sendAudio(base64Pcm: string) {
     if (this.snap.status !== 'live' || !this.session) return
-    this.session.sendRealtimeInput({ audio: { data: base64Pcm, mimeType: 'audio/pcm;rate=16000' } })
+    // While Buddy speaks, and for a moment after, send silence instead of the mic: without
+    // headphones the mic hears Buddy, and she would answer herself (echo cancellation isn't
+    // reliable in every browser). Trade-off: the user can't interrupt Buddy mid-sentence.
+    const echoTail = Date.now() - this.playbackEndedAt < 500
+    const data = this.player.playing || echoTail ? SILENCE_40MS : base64Pcm
+    this.session.sendRealtimeInput({ audio: { data, mimeType: 'audio/pcm;rate=16000' } })
   }
 
   // ---- server messages --------------------------------------------------

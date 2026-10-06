@@ -28,6 +28,8 @@ import { recordWalk, useWalks } from '../state/walks'
 import { dueWords, findWord, getWords, reviewWord, saveWord } from '../state/words'
 import type { Level, Profile, Word } from '../types'
 
+const SPEECH_LOCALE: Record<Profile['targetLanguage'], string> = { sv: 'sv-SE', es: 'es-ES', ja: 'ja-JP' }
+
 const INITIAL: CallSnapshot = {
   status: 'connecting',
   error: null,
@@ -153,6 +155,15 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         : [UPDATE_LEARNING_STYLE, HANG_UP, SAVE_WORD, MARK_RECALL, ...(lesson ? [COMPLETE_LESSON] : [])],
       onToolCall,
       onSilence: (count) => silenceNudge(count, motherTongue),
+      // Learners' speech is hesitant and accented; auto-detection then drifts to the wrong
+      // language. Tell it which two languages to expect, and which phrases they're practising.
+      transcription: {
+        languageCodes: [SPEECH_LOCALE[profile.targetLanguage], profile.motherTongue],
+        customVocabulary: [
+          ...(lesson ? [...lesson.lesson.phrases, ...lesson.review].map((p) => p.target) : []),
+          ...dueWords(getWords(profile.targetLanguage)).map((w) => w.target),
+        ].slice(0, 40),
+      },
       requestToken: async () => {
         if (!liveTokenUrl) throw new Error('Supabase is not configured')
         const auth = await accessToken()
