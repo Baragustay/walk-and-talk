@@ -50,6 +50,7 @@ HOW YOU TALK
 - Keep replies to 1 or 2 short sentences, then hand the turn back. Translations don't count toward this.
 - Speak slowly and clearly at steps 0 to 2.
 - You lead the conversation. Never lecture: one small thing at a time, then let them talk.
+- Your tools (save_word, mark_recall, hang_up and the others) are silent actions. Never say their names or describe calling them out loud.
 
 THE LADDER
 Pick the step that fits them right now, not the level on paper.
@@ -157,6 +158,8 @@ export interface PromptContext {
   walkMinutes: number
   /** Starter and A1: today's lesson from the course. Replaces free conversation. */
   lesson?: LessonPlan | null
+  /** Review call: the words to go through, voice only. Replaces topic and lesson. */
+  review?: Word[] | null
   /** Level call: the course, used as a placement test. */
   placementCourse?: Lesson[] | null
 }
@@ -224,6 +227,25 @@ After that, keep practising everything from this lesson and the review until the
 Stay with these phrases. Only add other words if they ask for them.`
 }
 
+/** A short voice-only review: recall each word, check pronunciation, update the schedule. */
+function formatReview(words: Word[], motherTongue: string): string {
+  const list = words
+    .map((w) => `- ${w.target}${w.kana && w.kana !== w.target ? ` (${w.kana}${w.romaji ? `, ${w.romaji}` : ''})` : ''} = ${w.translation}`)
+    .join('\n')
+  return `REVIEW CALL
+This call is a quick voice review of their saved words, not a conversation. Go through them in this order:
+${list}
+For each word:
+1. Ask in ${motherTongue}: "How do you say '<meaning>'?" Then wait for their actual answer. Never assume an answer: if you heard nothing, keep waiting.
+2. Right and clear: say "Yes!" or similar, very short, and call mark_recall with remembered true.
+3. Right word but a sound is clearly off: say it slowly in parts, have them repeat it once, then call mark_recall with remembered true.
+4. Wrong or "I don't know": say the word slowly, have them repeat it twice, use it in one tiny sentence, then call mark_recall with remembered false.
+Call mark_recall exactly once per word: only after they have tried to answer, and before you ask for the next word. Never skip it, and never call it again for the same word (not for the retry at the end).
+Keep a brisk, friendly pace: one word at a time, few words in between.
+At the end, ask once more for the ones they missed. Then say how many they remembered, give one encouraging sentence, say goodbye and call hang_up.
+If they want to stop or switch to chatting, follow them (see ADAPT ON THE FLY).`
+}
+
 function formatDueWords(words: Word[]): string {
   if (words.length === 0) return '- None today.'
   return words
@@ -247,7 +269,11 @@ export function buildSystemPrompt(c: PromptContext): string {
       ? ` They are ${c.ageRange === '65+' ? '65 or older' : `${c.ageRange} years old`}: pick topics and examples that fit someone that age, but follow what they actually tell you about their life.`
       : '',
     due_words: formatDueWords(c.dueWords),
-    topic_or_photo_notes: c.lesson ? formatLesson(c.lesson, c.motherTongue) : c.topicNotes,
+    topic_or_photo_notes: c.review?.length
+      ? formatReview(c.review, c.motherTongue)
+      : c.lesson
+        ? formatLesson(c.lesson, c.motherTongue)
+        : c.topicNotes,
     // Only the level call gets the level-check instructions.
     first_call: c.level === 'unknown' ? FIRST_CALL : '',
     placement: formatPlacement(c.placementCourse, c.motherTongue, c.targetLanguage),
@@ -295,6 +321,10 @@ export function kickoffMessage(levelCall: boolean, motherTongue: string, learnin
     )
   }
   return `(The user has just called you. Pick up warmly, say hello, and ask one easy first question.${style})`
+}
+
+export function reviewKickoffMessage(count: number, motherTongue: string): string {
+  return `(The user called for a quick review of ${count} words. Say hello in one short sentence in ${motherTongue}, then ask for the first word.)`
 }
 
 export function lessonKickoffMessage(plan: LessonPlan, motherTongue: string, learningStyle: string[] = []): string {

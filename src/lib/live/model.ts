@@ -7,3 +7,7 @@ export const LIVE_API_VERSION = 'v1alpha'
 
 // Longest walk option is 30 min; leave room for the end-of-walk quiz.
 export const TOKEN_LIFETIME_MINUTES = 45
+
+// Buddy's voice, everywhere: calls (Live API) and flashcards (TTS, supabase/functions/speak).
+// One of Gemini's prebuilt voices; "Sulafat" is described by Google as warm.
+export const BUDDY_VOICE = 'Sulafat'

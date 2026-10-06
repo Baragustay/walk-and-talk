@@ -45,9 +45,10 @@ const ERRORS: Record<CallError, { title: string; body: string }> = {
 export function Call() {
   const navigate = useNavigate()
   const [params] = useSearchParams()
-  const isLevelCall = params.get('mode') === 'level'
+  const mode = params.get('mode') === 'level' ? 'level' : params.get('mode') === 'review' ? 'review' : 'walk'
+  const isLevelCall = mode === 'level'
   const profile = useProfile()
-  const call = useLiveCall(profile, isLevelCall)
+  const call = useLiveCall(profile, mode)
   const showLog = useCallDebug()
   const { topic } = useCallSetup()
   // Captured at the start, so finishing the lesson mid-call doesn't change the header.
@@ -122,6 +123,11 @@ export function Call() {
           {call.sessionWords.length > 0 ? ` and practised ${plural(call.sessionWords.length, 'word', 'words')}` : ''}.
         </p>
         {call.lessonDone && <p className={styles.done}>✓ Lesson done: {call.lessonDone}</p>}
+        {Object.keys(call.recalls).length > 0 && (
+          <p className={styles.done}>
+            You remembered {Object.values(call.recalls).filter(Boolean).length} of {Object.keys(call.recalls).length}.
+          </p>
+        )}
         {call.sessionWords.length > 0 && (
           <section className={styles.recap} aria-labelledby="recap-title">
             <h2 id="recap-title" className="section-title">
@@ -130,6 +136,11 @@ export function Call() {
             <ul>
               {call.sessionWords.map((w) => (
                 <li key={w.id}>
+                  {w.id in call.recalls && (
+                    <span aria-label={call.recalls[w.id] ? 'remembered' : 'practise again'}>
+                      {call.recalls[w.id] ? '✓' : '↺'}
+                    </span>
+                  )}
                   <WordText word={w} lang={profile.targetLanguage} showRomaji={profile.showRomaji} />
                   <span className="soft">{w.translation}</span>
                 </li>
@@ -151,7 +162,11 @@ export function Call() {
   return (
     <div className={styles.page}>
       <header className={styles.top}>
-        <p className={styles.meta}>{isLevelCall ? 'Level call' : (lessonTitle ?? TOPICS.find((t) => t.id === topic)?.label ?? 'Free talk')}</p>
+        <p className={styles.meta}>{isLevelCall
+            ? 'Level call'
+            : mode === 'review'
+              ? 'Review'
+              : (lessonTitle ?? TOPICS.find((t) => t.id === topic)?.label ?? 'Free talk')}</p>
         <p className={styles.meta}>
           <span className="visually-hidden">Call time </span>
           <time>{formatTimer(seconds)}</time>

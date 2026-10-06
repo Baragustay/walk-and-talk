@@ -13,7 +13,7 @@ import { playHangup, playPickup, RING_CYCLE_S, startRinging } from './audio/call
 import { isAudioRunning, getAudioContext, resumeAudio } from './audio/context'
 import { MicError, startMic, type Mic } from './audio/mic'
 import { PcmPlayer } from './audio/player'
-import { LIVE_API_VERSION } from './model'
+import { BUDDY_VOICE, LIVE_API_VERSION } from './model'
 import type { ToolHandler } from './tools'
 
 export type CallStatus = 'connecting' | 'live' | 'reconnecting' | 'ended' | 'error'
@@ -113,6 +113,8 @@ export class LiveCall {
    * audio and text until the user speaks again.
    */
   private holdOutput: false | 'afterTurn' | 'muted' = false
+  /** The user said something since the last consumeUserAnswer(): for checking review answers. */
+  private userAnswered = false
   private hangUpTimer: ReturnType<typeof setInterval> | null = null
   private lastAudioAt = 0
   private turnCompletedAt = 0
@@ -223,6 +225,13 @@ export class LiveCall {
     }, 300)
   }
 
+  /** Did the user say anything since the last time this was asked? (Then resets.) */
+  consumeUserAnswer(): boolean {
+    const answered = this.userAnswered
+    this.userAnswered = false
+    return answered
+  }
+
   /** "Hold on": no silence check-ins until they speak again. */
   waitForUser() {
     if (this.checkinsOff !== 'call') this.checkinsOff = 'untilSpeech'
@@ -268,6 +277,7 @@ export class LiveCall {
         config: {
           responseModalities: [Modality.AUDIO],
           systemInstruction: this.opts.systemPrompt,
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: BUDDY_VOICE } } },
           inputAudioTranscription: this.opts.transcription ?? {},
           outputAudioTranscription: {},
           // Audio sessions stop at 15 min without this; walks can be 30.
@@ -380,6 +390,7 @@ export class LiveCall {
       }
       if (sc.inputTranscription?.text) {
         this.replyOwed = true
+        this.userAnswered = true
         this.appendText('user', sc.inputTranscription.text)
       }
       const muted = this.holdOutput === 'muted'

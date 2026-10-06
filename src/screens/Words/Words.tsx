@@ -1,4 +1,6 @@
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
+import { PhoneIcon } from '../../components/Icons'
+import { prepareAudio } from '../../lib/live/audio/context'
 import { WordText } from '../../components/WordText/WordText'
 import { useProfile } from '../../state/profile'
 import { dueWords, useWords } from '../../state/words'
@@ -7,6 +9,7 @@ import styles from './Words.module.css'
 
 export function Words() {
   const profile = useProfile()
+  const navigate = useNavigate()
   const words = useWords(profile.targetLanguage)
   const due = dueWords(words)
   const all = [...words].sort((a, b) => b.createdAt - a.createdAt)
@@ -29,8 +32,19 @@ export function Words() {
         {due.length > 0 ? (
           <>
             <ul className={styles.list}>{due.map(row)}</ul>
-            <Link to="/words/review" className="btn btn-primary btn-block">
-              Start flashcards
+            <button
+              type="button"
+              className="btn btn-primary btn-block"
+              onClick={() => {
+                prepareAudio()
+                navigate('/call?mode=review')
+              }}
+            >
+              <PhoneIcon />
+              Review with Buddy
+            </button>
+            <Link to="/words/review" className="btn btn-block">
+              Flashcards instead
             </Link>
           </>
         ) : (

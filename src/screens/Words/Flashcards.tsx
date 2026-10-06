@@ -30,6 +30,7 @@ export function Flashcards() {
 
   const flip = () => {
     setFlipped(true)
+    if (canSpeak(lang)) void speak(word.target, lang)
     // Move focus to the answer so screen readers read it.
     requestAnimationFrame(() => backRef.current?.focus())
   }
@@ -72,10 +73,18 @@ export function Flashcards() {
                   {word.example}
                 </p>
                 {canSpeak(lang) && (
-                  <button type="button" className="btn" onClick={() => speak(word.example, lang)}>
-                    <SpeakerIcon />
-                    Play
-                  </button>
+                  <div className={styles.playRow}>
+                    <button type="button" className="btn" onClick={() => speak(word.target, lang)}>
+                      <SpeakerIcon />
+                      Hear it
+                    </button>
+                    {word.example && (
+                      <button type="button" className="btn" onClick={() => speak(word.example, lang)}>
+                        <SpeakerIcon />
+                        Example
+                      </button>
+                    )}
+                  </div>
                 )}
               </div>
             )}

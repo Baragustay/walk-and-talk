@@ -6,6 +6,7 @@ import {
   kickoffMessage,
   lessonKickoffMessage,
   levelCallWrapUpCue,
+  reviewKickoffMessage,
   silenceNudge,
   walkWrapUpCue,
 } from '../lib/live/systemPrompt'
@@ -55,18 +56,24 @@ const LEVEL_CUE_AT = 5 * 60 // seconds: "finish if you're sure"
 const LEVEL_CUE_AGAIN_AT = 10 * 60 // firm: advanced speakers need longer to test
 
 /** Starts a Live call when the screen mounts, hangs up when it unmounts. */
-export function useLiveCall(profile: Profile, isLevelCall: boolean) {
+export function useLiveCall(profile: Profile, mode: 'walk' | 'level' | 'review') {
+  const isLevelCall = mode === 'level'
   const [snap, setSnap] = useState<CallSnapshot>(INITIAL)
   const [levelResult, setLevelResult] = useState<{ level: Level; note: string } | null>(null)
   /** Words saved or completed during this call, newest first: for the word card and the recap. */
   const [sessionWords, setSessionWords] = useState<Word[]>([])
   const [lessonDone, setLessonDone] = useState<string | null>(null)
+  /** Review results this call: word id -> remembered. */
+  const [recalls, setRecalls] = useState<Record<string, boolean>>({})
   const walks = useWalks()
   const call = useRef<LiveCall | null>(null)
 
   useEffect(() => {
     const motherTongue = languageName(profile.motherTongue)
-    const lesson = isLevelCall ? null : currentLesson(profile)
+    // Review: due words first; if none are due, the most recent ones.
+    const allWords = getWords(profile.targetLanguage)
+    const review = mode === 'review' ? (dueWords(allWords).length ? dueWords(allWords) : allWords).slice(0, 15) : null
+    const lesson = isLevelCall || review ? null : currentLesson(profile)
     const systemPrompt = buildSystemPrompt({
       motherTongue,
       ageRange: profile.ageRange,
@@ -80,9 +87,11 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       topicNotes: topicNotes(getCallSetup().topic),
       walkMinutes: isLevelCall ? 5 : profile.walkMinutes,
       lesson,
+      review,
       placementCourse: isLevelCall ? courseFor(profile.targetLanguage) : null,
     })
 
+    const recorded = new Set<string>() // words already marked in this call
     const onToolCall: ToolHandler = (name, args) => {
       if (name === 'set_level') {
         const result = parseSetLevel(args)
@@ -144,7 +153,16 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       if (name === 'mark_recall') {
         const w = findWord(profile.targetLanguage, String(args?.word ?? ''))
         if (!w) return { error: 'Not one of their saved words.' }
+        // Only the first answer per word counts, so one call can't move the schedule twice.
+        if (recorded.has(w.id)) return { ok: true, note: 'Already recorded for this word. Continue.' }
+        // Buddy sometimes "hears" an answer that never came. Only count it if they spoke.
+        if (!c.consumeUserAnswer()) {
+          return { error: "They haven't answered yet. Ask again if needed, wait for their answer, then call mark_recall." }
+        }
+        recorded.add(w.id)
         reviewWord(w.id, Boolean(args?.remembered))
+        setSessionWords((ws) => [w, ...ws.filter((x) => x.id !== w.id)])
+        setRecalls((r) => ({ ...r, [w.id]: Boolean(args?.remembered) }))
         return { saved: true }
       }
       if (name === 'wait_for_user') {
@@ -168,8 +186,10 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
     // Only the current call may update the screen (React dev mode mounts twice).
     const c: LiveCall = new LiveCall({
       systemPrompt,
-      kickoff: lesson
-        ? lessonKickoffMessage(lesson, motherTongue, profile.learningStyle)
+      kickoff: review
+        ? reviewKickoffMessage(review.length, motherTongue)
+        : lesson
+          ? lessonKickoffMessage(lesson, motherTongue, profile.learningStyle)
         : kickoffMessage(isLevelCall, motherTongue, profile.learningStyle),
       tools: isLevelCall
         ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP, WAIT_FOR_USER, DRIVING_MODE]
@@ -257,6 +277,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
     levelResult,
     sessionWords,
     lessonDone,
+    recalls,
     end: () => call.current?.end(),
     unblockAudio: () => call.current?.unblockAudio(),
   }

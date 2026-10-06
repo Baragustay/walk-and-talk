@@ -102,3 +102,5 @@
   gap: var(--space-4);
   text-align: center;
 }
+
+.playRow { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }

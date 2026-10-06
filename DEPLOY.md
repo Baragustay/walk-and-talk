@@ -18,6 +18,11 @@ on) pulls it into `public_html/buddy`. `public/.htaccess` sends http to https an
 
 Hostinger replaces everything in the site folder on each deploy, so never put files there by hand.
 
+## Supabase Edge Functions: live-token and speak
+
+- `live-token`: short-lived Gemini Live tokens for calls.
+- `speak`: reads words aloud in Buddy's voice for the flashcards (Gemini TTS).
+
 ## Token server: Supabase Edge Function
 
 `supabase/functions/live-token/index.ts` checks the login, then asks Google for a short-lived
@@ -25,6 +30,7 @@ Gemini Live token. After changing it, deploy from the project folder:
 
 ```sh
 npx supabase functions deploy live-token --no-verify-jwt --project-ref uatijscirvcpmeasclih
+npx supabase functions deploy speak --no-verify-jwt --project-ref uatijscirvcpmeasclih
 ```
 
 (`--no-verify-jwt` because the function checks the login itself.) The CLI needs a one-time
