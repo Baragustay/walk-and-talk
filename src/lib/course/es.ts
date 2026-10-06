@@ -1,4 +1,7 @@
 // Spanish course for Starter (Pre-A1) and A1 learners. One lesson per walk.
+// Based on the Plan curricular del Instituto Cervantes, niveles A1–A2 (functions, notions,
+// grammar inventories): https://cvc.cervantes.es/ensenanza/biblioteca_ele/plan_curricular/indice.htm
+// and the CEFR Companion Volume 2020 A1 spoken interaction/production can-dos.
 // Order: what you need on a voice call first (greetings, "I don't understand"),
 // then the walk itself, then everyday topics. Each lesson reuses earlier phrases.
 // Edit freely: Buddy reads this as its lesson plan. Keep 3 to 5 phrases per lesson.

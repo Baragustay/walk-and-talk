@@ -18,4 +18,6 @@ export interface Lesson {
   phrases: Phrase[]
   /** How to practise this on a walk. */
   walkIdea: string
+  /** Where this lesson comes from: CEFR can-do and the language's official curriculum. */
+  refs?: string[]
 }

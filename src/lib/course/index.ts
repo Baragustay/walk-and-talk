@@ -1,12 +1,12 @@
 import type { Level, Profile, TargetLanguage } from '../../types'
 import { SPANISH_COURSE } from './es'
 import { JAPANESE_COURSE } from './ja'
+import { SWEDISH_COURSE } from './sv'
 import type { Lesson, Phrase } from './types'
 
 export type { Lesson, Phrase }
 
-// Swedish comes next.
-const COURSES: Partial<Record<TargetLanguage, Lesson[]>> = { es: SPANISH_COURSE, ja: JAPANESE_COURSE }
+const COURSES: Partial<Record<TargetLanguage, Lesson[]>> = { es: SPANISH_COURSE, ja: JAPANESE_COURSE, sv: SWEDISH_COURSE }
 
 /** Starter and A1 learners follow the course; from A2 up it's conversation. */
 const COURSE_LEVELS: Level[] = ['preA1', 'A1']

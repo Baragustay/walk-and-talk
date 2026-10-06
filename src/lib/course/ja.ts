@@ -1,4 +1,6 @@
 // Japanese course for Starter (N5 and below) learners. One lesson per walk.
+// Based on the JF Standard for Japanese-Language Education (CEFR-based can-dos) and the topics of
+// Marugoto Starter (A1): https://www.jfstandard.jpf.go.jp/  https://marugotoweb.jp/
 // Same order and topics as the Spanish course. Polite -masu/-desu forms throughout:
 // safe with anyone, and the pattern repeats, so each lesson builds on the last.
 // `target` is how it's normally written; `kana` is the reading; `romaji` for the romaji setting.
