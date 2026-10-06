@@ -105,6 +105,14 @@ export class LiveCall {
   private silenceNudges = 0
   private silenceTimer: ReturnType<typeof setInterval> | null = null
   private buddyHasSpoken = false
+  /** 'untilSpeech': user said "hold on". 'call': driving, no check-ins at all. */
+  private checkinsOff: false | 'untilSpeech' | 'call' = false
+  /**
+   * After "Sure, I'll wait": Gemini always says something after a tool call, even when told to
+   * stay quiet. 'afterTurn' lets the current turn (the "I'll wait") finish; 'muted' drops Buddy's
+   * audio and text until the user speaks again.
+   */
+  private holdOutput: false | 'afterTurn' | 'muted' = false
   private hangUpTimer: ReturnType<typeof setInterval> | null = null
   private lastAudioAt = 0
   private turnCompletedAt = 0
@@ -215,6 +223,20 @@ export class LiveCall {
     }, 300)
   }
 
+  /** "Hold on": no silence check-ins until they speak again. */
+  waitForUser() {
+    if (this.checkinsOff !== 'call') this.checkinsOff = 'untilSpeech'
+    this.holdOutput = 'afterTurn'
+    this.quietSince = 0
+    this.debug('waiting for user (check-ins paused)')
+  }
+
+  /** Driving or cycling: no silence check-ins for the rest of the call. */
+  drivingMode() {
+    this.checkinsOff = 'call'
+    this.debug('driving mode (check-ins off)')
+  }
+
   /** Call from a tap if the browser blocked audio. */
   async unblockAudio() {
     await resumeAudio()
@@ -322,6 +344,8 @@ export class LiveCall {
     if (vaType === 'ACTIVITY_START') {
       this.userSpeaking = true
       this.silenceNudges = 0 // they're back
+      if (this.checkinsOff === 'untilSpeech') this.checkinsOff = false
+      this.holdOutput = false
       this.awaitingReplySince = null
       if (this.thinkingTimer) clearTimeout(this.thinkingTimer)
       this.closeBubble('buddy')
@@ -358,7 +382,9 @@ export class LiveCall {
         this.replyOwed = true
         this.appendText('user', sc.inputTranscription.text)
       }
+      const muted = this.holdOutput === 'muted'
       for (const part of sc.modelTurn?.parts ?? []) {
+        if (muted) break
         if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('audio/')) {
           this.turnHadAudio = true
           this.buddyHasSpoken = true
@@ -370,13 +396,18 @@ export class LiveCall {
           this.player.enqueue(part.inlineData.data)
         }
       }
-      if (sc.outputTranscription?.text) {
+      if (sc.outputTranscription?.text && !muted) {
         this.closeBubble('user')
         this.appendText('buddy', sc.outputTranscription.text)
       }
       if (sc.turnComplete) {
         // An empty turn (e.g. right after a tool call) doesn't count as an answer.
         if (this.turnHadAudio) this.stopThinking()
+        // The "I'll wait" turn is done: from now on, hold Buddy's output until they speak.
+        if (this.holdOutput === 'afterTurn' && this.turnHadAudio) {
+          this.holdOutput = 'muted'
+          this.debug('holding Buddy until you speak')
+        }
         this.turnHadAudio = false
         this.turnCompletedAt = Date.now()
         this.closeBubble('buddy')
@@ -389,7 +420,7 @@ export class LiveCall {
 
   /** Quiet = nobody talking, nothing pending. The clock starts when Buddy's audio has finished. */
   private checkSilence() {
-    if (this.ending || this.hangUpTimer || this.snap.status !== 'live' || !this.buddyHasSpoken) return
+    if (this.ending || this.hangUpTimer || this.checkinsOff || this.snap.status !== 'live' || !this.buddyHasSpoken) return
     const busy = this.player.playing || this.userSpeaking || this.awaitingReplySince !== null
     if (busy) {
       this.quietSince = 0
@@ -448,6 +479,9 @@ export class LiveCall {
   // ---- transcript bubbles -----------------------------------------------
 
   private appendText(who: Bubble['who'], text: string) {
+    // The transcriber sometimes sends placeholders like "<no speech detected>" for empty audio.
+    text = text.replace(/<[^>]*>/g, '')
+    if (!text.trim()) return
     const bubbles = [...this.snap.bubbles]
     const last = bubbles[bubbles.length - 1]
     if (last && last.who === who && !last.done) {

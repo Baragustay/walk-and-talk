@@ -76,6 +76,18 @@ export const MARK_RECALL: FunctionDeclaration = {
   },
 }
 
+export const WAIT_FOR_USER: FunctionDeclaration = {
+  name: 'wait_for_user',
+  description:
+    'They asked you to wait ("hold on", "one sec") or are clearly busy for a moment. The app stops checking in on silence until they speak again.',
+}
+
+export const DRIVING_MODE: FunctionDeclaration = {
+  name: 'driving_mode',
+  description:
+    'They are driving or cycling. The app stops all silence check-ins for the rest of the call. Call once, as soon as you know.',
+}
+
 export const MAX_STYLE_ITEMS = 8
 
 export const UPDATE_LEARNING_STYLE: FunctionDeclaration = {

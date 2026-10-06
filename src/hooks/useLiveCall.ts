@@ -12,6 +12,7 @@ import {
 import { completeLesson, courseFor, currentLesson, progressFromPlacement } from '../lib/course'
 import {
   COMPLETE_LESSON,
+  DRIVING_MODE,
   HANG_UP,
   MARK_RECALL,
   SAVE_WORD,
@@ -19,6 +20,7 @@ import {
   parseSetLevel,
   SET_LEVEL,
   UPDATE_LEARNING_STYLE,
+  WAIT_FOR_USER,
   type ToolHandler,
 } from '../lib/live/tools'
 import { liveTokenUrl, supabaseAnonKey } from '../lib/supabase'
@@ -145,6 +147,17 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         reviewWord(w.id, Boolean(args?.remembered))
         return { saved: true }
       }
+      if (name === 'wait_for_user') {
+        c.waitForUser()
+        return {
+          ok: true,
+          note: "If you haven't yet, say only a very short 'Sure, I'll wait'. Then say nothing more until they speak.",
+        }
+      }
+      if (name === 'driving_mode') {
+        c.drivingMode()
+        return { ok: true }
+      }
       if (name === 'hang_up') {
         c.hangUpAfterGoodbye()
         return { ok: true, note: 'The call ends after your goodbye. If you have not said goodbye yet, say it now, briefly.' }
@@ -159,8 +172,16 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         ? lessonKickoffMessage(lesson, motherTongue, profile.learningStyle)
         : kickoffMessage(isLevelCall, motherTongue, profile.learningStyle),
       tools: isLevelCall
-        ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP]
-        : [UPDATE_LEARNING_STYLE, HANG_UP, SAVE_WORD, MARK_RECALL, ...(lesson ? [COMPLETE_LESSON] : [])],
+        ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP, WAIT_FOR_USER, DRIVING_MODE]
+        : [
+            UPDATE_LEARNING_STYLE,
+            HANG_UP,
+            SAVE_WORD,
+            MARK_RECALL,
+            WAIT_FOR_USER,
+            DRIVING_MODE,
+            ...(lesson ? [COMPLETE_LESSON] : []),
+          ],
       onToolCall,
       onSilence: (count) => silenceNudge(count, motherTongue),
       // Learners' speech is hesitant and accented; auto-detection then drifts to the wrong
