@@ -20,9 +20,27 @@ function fromSession(session: Session | null): AuthState {
   return u.is_anonymous ? { status: 'anonymous', userId: u.id } : { status: 'signedIn', userId: u.id, email: u.email ?? null }
 }
 
+/**
+ * The stored session can be out of date: after linking Google or confirming an email, the saved
+ * token still says "anonymous" until it's refreshed. Ask the server, and refresh if it changed.
+ */
+async function settle(session: Session | null): Promise<AuthState> {
+  if (!supabase || !session?.user.is_anonymous) return fromSession(session)
+  const { data } = await supabase.auth.getUser()
+  if (data.user && !data.user.is_anonymous) {
+    const refreshed = await supabase.auth.refreshSession()
+    return fromSession(refreshed.data.session ?? session)
+  }
+  return fromSession(session)
+}
+
 if (supabase) {
-  void supabase.auth.getSession().then(({ data }) => store.set(fromSession(data.session)))
-  supabase.auth.onAuthStateChange((_event, session) => store.set(fromSession(session)))
+  void supabase.auth.getSession().then(async ({ data }) => store.set(await settle(data.session)))
+  supabase.auth.onAuthStateChange((_event, session) => {
+    // Can't await Supabase calls inside this callback (it deadlocks), so settle afterwards.
+    store.set(fromSession(session))
+    if (session?.user.is_anonymous) setTimeout(() => void settle(session).then((s) => store.set(s)), 0)
+  })
 }
 
 export function useAuth(): AuthState {

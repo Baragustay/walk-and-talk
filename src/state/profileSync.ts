@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import type { AgeRange } from '../lib/age'
 import type { Level, Profile, TargetLanguage } from '../types'
 import { getAuth, onAuthChange } from './auth'
+import { createStore, useStore } from './createStore'
 import { getProfile, replaceProfile, subscribeProfile } from './profile'
 
 interface ProfileRow {
@@ -57,6 +58,10 @@ function fromRow(r: ProfileRow): Profile {
 }
 
 let syncedUser: string | null = null
+
+/** Which account's profile has been loaded from the server (null = none yet). */
+const loadedStore = createStore<string | null>(null)
+export const useProfileLoadedFor = () => useStore(loadedStore)
 let applyingRemote = false
 let saveTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -79,6 +84,7 @@ async function loadFor(userId: string) {
   } else {
     await save(userId)
   }
+  loadedStore.set(userId)
 }
 
 export function startProfileSync() {

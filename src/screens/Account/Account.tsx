@@ -1,9 +1,10 @@
-import { useId, useState } from 'react'
+import { useEffect, useId, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { BackIcon } from '../../components/Icons'
 import { continueWithEmail, continueWithGoogle, signInExisting, signOut, useAuth } from '../../state/auth'
-import { resetLocalProfile } from '../../state/profile'
+import { resetLocalProfile, useProfile } from '../../state/profile'
+import { useProfileLoadedFor } from '../../state/profileSync'
 import styles from './Account.module.css'
 
 // /account                    keep progress (attach Google or email to the trial account)
@@ -22,6 +23,15 @@ export function Account() {
   const emailId = useId()
 
   const done = () => navigate('/', { replace: true })
+  const profile = useProfile()
+  const loadedFor = useProfileLoadedFor()
+
+  // Back from Google (or the email link) and signed in: carry on to Home, or to onboarding if
+  // this account has never been set up.
+  useEffect(() => {
+    if (auth.status !== 'signedIn' || loadedFor !== auth.userId || sentTo) return
+    navigate(profile.onboarded ? '/' : '/onboarding/about', { replace: true })
+  }, [auth, loadedFor, profile.onboarded, sentTo, navigate])
 
   const google = async () => {
     setError(null)
