@@ -34,7 +34,30 @@ async function settle(session: Session | null): Promise<AuthState> {
   return fromSession(session)
 }
 
+/**
+ * Errors from Google/Supabase come back in the address (?error_code=... or #error_code=...).
+ * "identity_already_exists": this Google account already belongs to an account (e.g. linked
+ * on an earlier try). Then just sign in to that account.
+ */
+const authErrorStore = createStore<string | null>(null)
+export const useAuthError = () => useStore(authErrorStore)
+
+function readAuthErrorFromUrl() {
+  const params = new URLSearchParams(location.search + '&' + location.hash.replace(/^#/, ''))
+  const code = params.get('error_code')
+  const description = params.get('error_description')
+  if (!code && !description) return
+  // Clean the address so a reload doesn't repeat this.
+  history.replaceState(null, '', location.pathname)
+  if (code === 'identity_already_exists' && supabase) {
+    void supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: `${location.origin}/` } })
+    return
+  }
+  authErrorStore.set(description?.replace(/\+/g, ' ') || 'Signing in didn’t work. Please try again.')
+}
+
 if (supabase) {
+  readAuthErrorFromUrl()
   void supabase.auth.getSession().then(async ({ data }) => store.set(await settle(data.session)))
   supabase.auth.onAuthStateChange((_event, session) => {
     // Can't await Supabase calls inside this callback (it deadlocks), so settle afterwards.

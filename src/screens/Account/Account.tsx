@@ -2,7 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { BackIcon } from '../../components/Icons'
-import { continueWithEmail, continueWithGoogle, signInExisting, signOut, useAuth } from '../../state/auth'
+import { continueWithEmail, continueWithGoogle, signInExisting, signOut, useAuth, useAuthError } from '../../state/auth'
 import { resetLocalProfile, useProfile } from '../../state/profile'
 import { useProfileLoadedFor } from '../../state/profileSync'
 import styles from './Account.module.css'
@@ -18,7 +18,8 @@ export function Account() {
   const auth = useAuth()
   const [email, setEmail] = useState('')
   const [sentTo, setSentTo] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const authError = useAuthError()
+  const [error, setError] = useState<string | null>(authError)
   const [busy, setBusy] = useState(false)
   const emailId = useId()
 

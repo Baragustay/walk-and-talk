@@ -74,6 +74,7 @@ async function loadFor(userId: string) {
   const { data, error } = await supabase!.from('profiles').select('*').eq('id', userId).maybeSingle()
   if (error) {
     console.warn('Loading profile failed', error.message)
+    loadedStore.set(userId) // carry on with the local copy rather than a blank screen
     return
   }
   syncedUser = userId
