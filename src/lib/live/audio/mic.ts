@@ -12,6 +12,13 @@ export class MicError extends Error {
 
 export interface Mic {
   stop(): void
+  /** e.g. "AirPods Pro" or "MacBook Pro Microphone" (empty if the browser hides it). */
+  label: string
+}
+
+/** A headset mic means sound goes to the ears, not the room: no echo, so no need to mute. */
+export function isHeadsetMic(label: string): boolean {
+  return /airpods|headset|headphone|earpods|earbuds|buds|bluetooth|hands-?free|jabra|bose|sony wh|beats/i.test(label)
 }
 
 export interface MicEvents {
@@ -59,6 +66,7 @@ export async function startMic({ onChunk, onTrackState }: MicEvents): Promise<Mi
   }
 
   return {
+    label: track?.label ?? '',
     stop() {
       recorder.port.onmessage = null
       if (track) track.onmute = track.onunmute = track.onended = null

@@ -11,7 +11,7 @@ import type { BuddyState } from '../../components/Buddy/buddyImages'
 import { keepScreenOn, releaseScreen } from '../wakeLock'
 import { playHangup, playPickup, RING_CYCLE_S, startRinging } from './audio/callSounds'
 import { isAudioRunning, getAudioContext, resumeAudio } from './audio/context'
-import { MicError, startMic, type Mic } from './audio/mic'
+import { isHeadsetMic, MicError, startMic, type Mic } from './audio/mic'
 import { PcmPlayer } from './audio/player'
 import { BUDDY_VOICE, LIVE_API_VERSION } from './model'
 import type { ToolHandler } from './tools'
@@ -77,6 +77,12 @@ export class LiveCall {
   private sessionGen = 0
   private mic: Mic | null = null
   private playbackEndedAt = 0
+  /** Headphones: mic stays open while Buddy talks (natural interruptions). */
+  private fullDuplex = false
+  /** Speakers: mic chunks held while Buddy talks, in case the user talked over her. */
+  private heldMic: { data: string; peak: number }[] = []
+  /** Mic loudness during this Buddy turn, to estimate how loud her echo is. */
+  private echoPeaks: number[] = []
   private player = new PcmPlayer((playing) => {
     if (!playing) this.playbackEndedAt = Date.now()
     this.updateBuddyState()
@@ -137,7 +143,7 @@ export class LiveCall {
         onChunk: (pcm, peak) => {
           this.micChunks++
           this.micPeak = Math.max(this.micPeak, peak)
-          this.sendAudio(pcm)
+          this.sendAudio(pcm, peak)
         },
         onTrackState: (state) => {
           this.debug(`mic ${state}`)
@@ -148,6 +154,8 @@ export class LiveCall {
       return this.fail(e instanceof MicError && e.kind === 'unsupported' ? 'mic-unsupported' : 'mic-denied')
     }
     if (this.ending) return this.cleanup()
+    this.fullDuplex = isHeadsetMic(this.mic.label)
+    this.debug(`mic: ${this.mic.label || 'unknown'} → ${this.fullDuplex ? 'headphones, interrupt any time' : 'speakers, echo guard on'}`)
 
     const tokenResult = await this.fetchToken()
     if (tokenResult !== 'ok') return this.fail(tokenResult)
@@ -219,9 +227,13 @@ export class LiveCall {
     this.debug('buddy is hanging up')
     this.hangUpTimer = setInterval(() => {
       const now = Date.now()
-      const quiet = !this.player.playing && now - this.lastAudioAt > 1200
-      const turnDone = this.turnCompletedAt > askedAt || now - askedAt > 5000
-      if ((quiet && turnDone) || now - askedAt > 15_000) this.end()
+      // The goodbye may come before or after the tool call. Wait until it has been heard
+      // (audio from shortly before the call onwards), finished playing, and its turn is done.
+      const goodbyeHeard = this.lastAudioAt > askedAt - 3000
+      const finished =
+        goodbyeHeard && !this.player.playing && now - this.lastAudioAt > 1500 && this.turnCompletedAt > this.lastAudioAt
+      const noGoodbyeComing = !goodbyeHeard && now - askedAt > 8000
+      if (finished || noGoodbyeComing || now - askedAt > 20_000) this.end()
     }, 300)
   }
 
@@ -325,14 +337,43 @@ export class LiveCall {
     else this.fail('network')
   }
 
-  private sendAudio(base64Pcm: string) {
+  private sendAudio(base64Pcm: string, peak = 0) {
     if (this.snap.status !== 'live' || !this.session) return
     // While Buddy speaks, and for a moment after, send silence instead of the mic: without
     // headphones the mic hears Buddy, and she would answer herself (echo cancellation isn't
     // reliable in every browser). Trade-off: the user can't interrupt Buddy mid-sentence.
-    const echoTail = Date.now() - this.playbackEndedAt < 500
-    const data = this.player.playing || echoTail ? SILENCE_40MS : base64Pcm
-    this.session.sendRealtimeInput({ audio: { data, mimeType: 'audio/pcm;rate=16000' } })
+    const send = (data: string) => this.session?.sendRealtimeInput({ audio: { data, mimeType: 'audio/pcm;rate=16000' } })
+    if (this.fullDuplex) return send(base64Pcm) // headphones: no echo, user can interrupt any time
+
+    const buddyAudible = this.player.playing || Date.now() - this.playbackEndedAt < 500
+    if (buddyAudible) {
+      // Keep the last ~4 s of mic while Buddy talks, instead of throwing it away.
+      this.heldMic.push({ data: base64Pcm, peak })
+      if (this.heldMic.length > 100) this.heldMic.shift()
+      this.echoPeaks.push(peak)
+      send(SILENCE_40MS)
+      return
+    }
+    if (this.heldMic.length) this.releaseHeldMic(send)
+    send(base64Pcm)
+  }
+
+  /**
+   * Buddy just stopped. If the user was clearly talking over her last moments (much louder than
+   * the echo of her voice), send that held audio now so their words aren't lost.
+   */
+  private releaseHeldMic(send: (data: string) => void) {
+    const held = this.heldMic
+    this.heldMic = []
+    // Echo level = the quieter third of the whole Buddy turn (the user rarely talks the whole time).
+    const peaks = this.echoPeaks.sort((a, b) => a - b)
+    this.echoPeaks = []
+    const echo = peaks[Math.floor(peaks.length * 0.3)] ?? 0
+    const loud = (c: { peak: number }) => c.peak > Math.max(3000, echo * 3)
+    if (held.filter(loud).length < 5) return // under ~0.2 s of loud sound: just echo or a noise
+    const start = held.findIndex(loud)
+    this.debug('you spoke over Buddy, sending it now')
+    for (const c of held.slice(Math.max(0, start - 3))) send(c.data)
   }
 
   // ---- server messages --------------------------------------------------
