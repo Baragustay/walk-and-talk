@@ -36,3 +36,7 @@
 
 .who { display: flex; align-items: center; gap: var(--space-3); }
 .name { font-weight: 800; font-size: var(--text-lg); }
+
+.level { font-size: var(--text-lg); }
+.progress { height: 8px; border-radius: 999px; background: var(--line); overflow: hidden; }
+.progress span { display: block; height: 100%; min-width: 8px; border-radius: inherit; background: var(--call); }

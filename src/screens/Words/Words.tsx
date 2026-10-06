@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router'
-import { PhoneIcon } from '../../components/Icons'
+import { PhoneIcon, SpeakerIcon } from '../../components/Icons'
+import { canSpeak, speak } from '../../lib/speak'
 import { prepareAudio } from '../../lib/live/audio/context'
 import { WordText } from '../../components/WordText/WordText'
 import { useProfile } from '../../state/profile'
@@ -14,20 +15,28 @@ export function Words() {
   const due = dueWords(words)
   const all = [...words].sort((a, b) => b.createdAt - a.createdAt)
 
+  const lang = profile.targetLanguage
   const row = (w: Word) => (
     <li key={w.id} className={styles.row}>
-      <WordText word={w} lang={profile.targetLanguage} showRomaji={profile.showRomaji} />
-      <span className="soft">{w.translation}</span>
+      <div className={styles.rowText}>
+        <WordText word={w} lang={lang} showRomaji={profile.showRomaji} />
+        <span className="soft">{w.translation}</span>
+      </div>
+      {canSpeak(lang) && (
+        <button type="button" className="icon-btn" onClick={() => speak(w.target, lang)} aria-label={`Hear ${w.target}`}>
+          <SpeakerIcon />
+        </button>
+      )}
     </li>
   )
 
   return (
     <div className="screen">
-      <h1>Words</h1>
+      <h1 className="page-title">Words</h1>
 
       <section className={styles.section} aria-labelledby="due-title">
         <h2 id="due-title" className="section-title">
-          Due today
+          Due today{due.length > 0 ? ` · ${due.length}` : ''}
         </h2>
         {due.length > 0 ? (
           <>
@@ -54,7 +63,7 @@ export function Words() {
 
       <section className={styles.section} aria-labelledby="all-title">
         <h2 id="all-title" className="section-title">
-          All words
+          All words{all.length > 0 ? ` · ${all.length}` : ''}
         </h2>
         {all.length > 0 ? (
           <ul className={styles.list}>{all.map(row)}</ul>

@@ -212,6 +212,7 @@ export function Call() {
         )}
         {call.sessionWords[0] && (
           <section className={styles.wordCard} aria-live="polite" aria-label="Latest word">
+            <span className={styles.wordLabel}>New word</span>
             <WordText word={call.sessionWords[0]} lang={profile.targetLanguage} showRomaji={profile.showRomaji} />
             <span className={styles.translation}>{call.sessionWords[0].translation}</span>
           </section>

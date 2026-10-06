@@ -57,7 +57,7 @@ export function Settings() {
         <button type="button" className={styles.back} onClick={() => navigate('/me')} aria-label="Back to Me">
           <BackIcon />
         </button>
-        <h1>Settings</h1>
+        <h1 className="page-title">Settings</h1>
       </header>
 
       <section className={styles.group} aria-labelledby="lang-title">

@@ -31,11 +31,26 @@
   font-weight: 600;
 }
 
+/* A soft pill behind the active icon: state shown by shape and colour, not only by weight */
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 30px;
+  border-radius: 999px;
+  transition: background-color var(--fade);
+}
+
 .active {
   color: var(--ink);
   font-weight: 800;
 }
 
+.active .icon {
+  background: var(--bubble-buddy);
+}
+
 .active svg {
-  stroke-width: 2.6;
+  stroke-width: 2.4;
 }

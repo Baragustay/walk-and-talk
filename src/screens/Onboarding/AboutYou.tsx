@@ -55,11 +55,10 @@ export function AboutYou() {
                 <span>{r.label}</span>
               </label>
             ))}
-            <label className="chip">
-              <input type="radio" name="age" checked={false} onChange={() => setAge('under18')} />
-              <span>Under 18</span>
-            </label>
           </div>
+          <button type="button" className={`link-btn ${styles.under18}`} onClick={() => setAge('under18')}>
+            I’m under 18
+          </button>
         </fieldset>
       </div>
     </OnboardingStep>

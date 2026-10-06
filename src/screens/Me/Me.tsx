@@ -3,6 +3,9 @@ import { Avatar } from '../../components/Avatar/Avatar'
 import { GearIcon } from '../../components/Icons'
 import { buddySrc } from '../../components/Buddy/buddyImages'
 import { useAuth } from '../../state/auth'
+import { currentLesson } from '../../lib/course'
+import { targetLanguageName } from '../../lib/languages'
+import { levelLabel } from '../../lib/levels'
 import { useProfile } from '../../state/profile'
 import { useWalks, walkStats } from '../../state/walks'
 import { useWords } from '../../state/words'
@@ -11,6 +14,7 @@ import styles from './Me.module.css'
 export function Me() {
   const profile = useProfile()
   const auth = useAuth()
+  const lesson = currentLesson(profile)
   const words = useWords(profile.targetLanguage)
   const { walksThisWeek, minutesSpoken } = walkStats(useWalks())
   const STATS = [
@@ -23,7 +27,7 @@ export function Me() {
   return (
     <div className="screen">
       <header className={styles.header}>
-        <h1>Me</h1>
+        <h1 className="page-title">Me</h1>
         <Link to="/settings" className={styles.gear} aria-label="Settings">
           <GearIcon />
         </Link>
@@ -39,6 +43,25 @@ export function Me() {
         </section>
       )}
 
+      <section className="feature-card" aria-labelledby="level-card">
+        <p className="eyebrow" id="level-card">
+          {targetLanguageName(profile.targetLanguage)}
+        </p>
+        <p className={styles.level}>
+          Level <strong>{levelLabel(profile.level, profile.targetLanguage)}</strong>
+        </p>
+        {lesson && (
+          <>
+            <p className="soft">
+              Lesson {lesson.number} of {lesson.total}: {lesson.lesson.title}
+            </p>
+            <div className={styles.progress} aria-hidden="true">
+              <span style={{ width: `${((lesson.number - 1) / lesson.total) * 100}%` }} />
+            </div>
+          </>
+        )}
+      </section>
+
       <img src={buddySrc('buddy_hero_card_banner.png')} alt="" className={styles.banner} />
 
       <ul className={styles.stats}>
@@ -50,7 +73,7 @@ export function Me() {
         ))}
       </ul>
 
-      <p className="soft">Every walk counts, however short. Buddy is here whenever you are.</p>
+      <p className="soft">Every call counts, however short. Buddy is here whenever you are.</p>
     </div>
   )
 }

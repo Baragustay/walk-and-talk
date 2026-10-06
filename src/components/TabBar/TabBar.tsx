@@ -15,7 +15,9 @@ export function TabBar() {
         {TABS.map(({ to, label, Icon, end }) => (
           <li key={to}>
             <NavLink to={to} end={end} className={({ isActive }) => `${styles.tab} ${isActive ? styles.active : ''}`}>
-              <Icon />
+              <span className={styles.icon}>
+                <Icon />
+              </span>
               <span>{label}</span>
             </NavLink>
           </li>

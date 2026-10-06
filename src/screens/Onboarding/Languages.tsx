@@ -32,7 +32,23 @@ export function Languages() {
     >
       <div className={styles.left}>
         <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>I speak</legend>
+          <legend className={styles.legend}>I want to practise</legend>
+          {TARGET_LANGUAGES.map((l) => (
+            <label key={l.code} className={styles.bigOption}>
+              <input
+                type="radio"
+                name="target"
+                value={l.code}
+                checked={target === l.code}
+                onChange={() => setTarget(l.code)}
+              />
+              <span>{l.name}</span>
+              <span className={styles.native} lang={l.code}>{l.native}</span>
+            </label>
+          ))}
+        </fieldset>
+        <fieldset className={styles.fieldset}>
+          <legend className={styles.legend}>My own language</legend>
           <label htmlFor={searchId} className="visually-hidden">
             Search languages
           </label>
@@ -68,22 +84,6 @@ export function Languages() {
           </ul>
         </fieldset>
 
-        <fieldset className={styles.fieldset}>
-          <legend className={styles.legend}>I want to practise</legend>
-          {TARGET_LANGUAGES.map((l) => (
-            <label key={l.code} className={styles.bigOption}>
-              <input
-                type="radio"
-                name="target"
-                value={l.code}
-                checked={target === l.code}
-                onChange={() => setTarget(l.code)}
-              />
-              <span>{l.name}</span>
-              <span className={styles.native} lang={l.code}>{l.native}</span>
-            </label>
-          ))}
-        </fieldset>
       </div>
     </OnboardingStep>
   )

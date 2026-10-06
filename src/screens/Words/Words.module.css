@@ -12,13 +12,20 @@
 .row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--space-3);
-  min-height: 60px;
-  padding: var(--space-3) var(--space-4);
+  min-height: 64px;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
 }
 .row + .row { border-top: 1.5px solid var(--line); }
-.row > :last-child { text-align: right; }
+.rowText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
 
 /* Flashcards */
 .reviewPage {
@@ -104,3 +111,6 @@
 }
 
 .playRow { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: center; }
+
+.progressBar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; flex: 1; margin: 0 var(--space-3); }
+.progressBar span { display: block; height: 100%; background: var(--call); transition: width var(--fade); }

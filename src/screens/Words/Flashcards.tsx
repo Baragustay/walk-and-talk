@@ -39,8 +39,11 @@ export function Flashcards() {
     <div className={styles.reviewPage}>
       <header className={styles.reviewTop}>
         <p className="soft" aria-live="polite">
-          {word ? `Card ${index + 1} of ${deck.length}` : 'All done'}
+          {word ? `${index + 1} / ${deck.length}` : 'Done'}
         </p>
+        <div className={styles.progressBar} aria-hidden="true">
+          <span style={{ width: `${(index / Math.max(deck.length, 1)) * 100}%` }} />
+        </div>
         <button type="button" className={styles.iconBtn} onClick={() => navigate('/words')} aria-label="Close flashcards">
           <CloseIcon />
         </button>

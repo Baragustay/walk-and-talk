@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { Buddy } from '../../components/Buddy/Buddy'
+import type { BuddyState } from '../../components/Buddy/buddyImages'
 import { OnboardingStep } from './OnboardingStep'
 import styles from './Onboarding.module.css'
 
-const CARDS = [
-  'Call Buddy and just talk.',
-  'Stuck? Say it in your own language and Buddy gives you the word.',
-  'Your new words come back on later walks.',
+const CARDS: { text: string; buddy: BuddyState }[] = [
+  { text: 'Call Buddy and just talk. Hands free, wherever you are.', buddy: 'talking' },
+  { text: 'Stuck? Say it in your own language and Buddy gives you the word.', buddy: 'listening' },
+  { text: 'Your new words come back on later calls, so they stick.', buddy: 'waving' },
 ]
 
 export function HowItWorks() {
@@ -48,7 +50,7 @@ export function HowItWorks() {
       }
     >
       <div ref={scroller} className={styles.carousel} aria-roledescription="carousel" aria-label="How it works">
-        {CARDS.map((text, i) => (
+        {CARDS.map(({ text, buddy }, i) => (
           <section
             key={i}
             className={styles.howCard}
@@ -56,8 +58,13 @@ export function HowItWorks() {
             aria-label={`${i + 1} of ${CARDS.length}`}
             aria-hidden={i !== index}
           >
-            <span className={styles.howNum} aria-hidden="true">{i + 1}</span>
-            <p className={styles.howText}>{text}</p>
+            <Buddy state={buddy} size={130} />
+            <p className={styles.howText}>
+              <span className={styles.howNum} aria-hidden="true">
+                {i + 1}
+              </span>
+              {text}
+            </p>
           </section>
         ))}
       </div>
