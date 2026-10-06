@@ -51,8 +51,8 @@ const INITIAL: CallSnapshot = {
 }
 
 // The model has no clock, so we tell it when to wrap up.
-const LEVEL_CUE_AT = 4 * 60 // seconds
-const LEVEL_CUE_AGAIN_AT = 6.5 * 60 // if it still hasn't set a level
+const LEVEL_CUE_AT = 5 * 60 // seconds: "finish if you're sure"
+const LEVEL_CUE_AGAIN_AT = 10 * 60 // firm: advanced speakers need longer to test
 
 /** Starts a Live call when the screen mounts, hangs up when it unmounts. */
 export function useLiveCall(profile: Profile, isLevelCall: boolean) {
@@ -227,8 +227,8 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         c.sendNote(text)
       }
       if (isLevelCall) {
-        if (elapsed >= LEVEL_CUE_AT && !levelSet) once('level', levelCallWrapUpCue())
-        if (elapsed >= LEVEL_CUE_AGAIN_AT && !levelSet) once('level-again', levelCallWrapUpCue())
+        if (elapsed >= LEVEL_CUE_AT && !levelSet) once('level', levelCallWrapUpCue(false))
+        if (elapsed >= LEVEL_CUE_AGAIN_AT && !levelSet) once('level-again', levelCallWrapUpCue(true))
       } else if (elapsed >= profile.walkMinutes * 60) {
         once('walk', walkWrapUpCue(profile.walkMinutes))
       }

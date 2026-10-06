@@ -10,10 +10,18 @@ import { setCallDebug, useCallDebug } from '../../state/debug'
 import { deleteAccount, signOut, useAuth } from '../../state/auth'
 import { startFresh } from '../../state/reset'
 import { resetLocalProfile, updateProfile, useProfile } from '../../state/profile'
-import type { TargetLanguage } from '../../types'
+import type { Level, TargetLanguage } from '../../types'
 import styles from './Settings.module.css'
 
 const WALK_OPTIONS = [10, 15, 20, 30]
+
+const LEVEL_WORDS: Record<string, string> = {
+  A1: 'beginner',
+  A2: 'elementary',
+  B1: 'intermediate',
+  B2: 'upper intermediate',
+  C1: 'advanced',
+}
 
 export function Settings() {
   const navigate = useNavigate()
@@ -23,7 +31,7 @@ export function Settings() {
   const [deleteError, setDeleteError] = useState(false)
   const [newWish, setNewWish] = useState('')
   const dialog = useRef<HTMLDialogElement>(null)
-  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId(), wish: useId(), age: useId() }
+  const ids = { mother: useId(), target: useId(), walk: useId(), romaji: useId(), reminders: useId(), debug: useId(), wish: useId(), age: useId(), level: useId() }
 
   const confirmDelete = async () => {
     try {
@@ -108,10 +116,26 @@ export function Settings() {
 
       <section className={styles.group} aria-labelledby="level-title">
         <h2 id="level-title" className="section-title">Level</h2>
+        <div className={styles.field}>
+          <label htmlFor={ids.level}>Current level</label>
+          <select
+            id={ids.level}
+            className={styles.select}
+            value={profile.level}
+            onChange={(e) =>
+              updateProfile({ level: e.target.value as Level, levelNote: 'Set by you in Settings' })
+            }
+          >
+            {(['preA1', 'A1', 'A2', 'B1', 'B2', 'C1'] as Level[]).map((l) => (
+              <option key={l} value={l}>
+                {levelLabel(l, profile.targetLanguage)}
+                {profile.targetLanguage === 'ja' || l === 'preA1' ? '' : ` – ${LEVEL_WORDS[l]}`}
+              </option>
+            ))}
+            {profile.level === 'unknown' && <option value="unknown">Not set yet</option>}
+          </select>
+        </div>
         <div className={styles.levelRow}>
-          <p>
-            Current level: <strong>{levelLabel(profile.level, profile.targetLanguage)}</strong>
-          </p>
           <button type="button" className="btn" onClick={() => {
               prepareAudio()
               navigate('/call?mode=level')

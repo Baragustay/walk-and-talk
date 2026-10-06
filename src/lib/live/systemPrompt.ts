@@ -140,7 +140,7 @@ const FIRST_CALL = `FIRST CALL ONLY (level check)
 - After set_level, give feedback in {mother_tongue}, in 4 or 5 short sentences:
   1. Two or three things they already know (be specific and warm).
   2. Their level in plain words (e.g. "a complete beginner", "you know the basics").
-  3. The plan: if there are lessons, say "We'll start with lesson N:" and its title (from the placement list, N = start_lesson), and what comes after it. Then say that a short call most days works best.
+  3. The plan. Pre-A1 or A1 with a placement list: say "We'll start with lesson N:" and its title (N = start_lesson), and what comes after it. A2 and up: no lessons; say you'll have real conversations about things they care about, and name one or two things you'll work on (from where they struggled). Then say that a short call most days works best.
   4. One encouraging sentence.
   Then say goodbye and call hang_up.`
 
@@ -161,11 +161,25 @@ export interface PromptContext {
   placementCourse?: Lesson[] | null
 }
 
+const SPEAKING_TEST = (target: string) => `SPEAKING TEST (for anyone beyond the beginner phrases)
+- Speak ${target} only, at the level you are testing, so they can show what they can do.
+- Climb this ladder. Give each task one or two turns, then move up. Stop climbing after they clearly struggle with two tasks at the same level.
+  A2: their daily routine, or what they did yesterday.
+  B1: tell a story from their past in detail; explain plans and the reasons for them.
+  B2: argue for an opinion on a familiar topic, with pros and cons; speculate about causes or consequences.
+  C1: an abstract or complex topic; a hypothetical ("what would you do if..."); ask them to rephrase an idea in another way; notice idioms and nuance.
+- Judge the five CEFR qualities, not just whether they answered: range (vocabulary), accuracy (grammar), fluency (pace, few long pauses), interaction (follows and responds naturally), coherence (connected, organised speech).
+- Their level is the highest level where they handled the tasks comfortably on most of those qualities. If they handled C1 tasks with ease, say C1 (it's the top of our scale).
+- If they say they're advanced, start at B1 and go straight up. Never decide on a level you didn't test them at.
+- Take the time you need: a few minutes for beginners, up to 10 minutes for advanced speakers.`
+
 /** One key phrase per lesson, asked in order, to find where a learner should start. */
 function formatPlacement(course: Lesson[] | null | undefined, motherTongue: string, target: string): string {
   if (!course?.length) {
-    return `- Then start at step 1 of the ladder and move down or up as their answers show, for 3 to 5 minutes.
-- Call set_level with your best estimate and a short note.`
+    return `- If they're new to ${target}, start at step 1 of the ladder and move down or up as their answers show.
+- Otherwise run the SPEAKING TEST below.
+${SPEAKING_TEST(target)}
+- Then call set_level with cefr_band, start_lesson 1, and a note naming what they did well and where they struggled.`
   }
   const items = course
     .map((l, i) => {
@@ -180,8 +194,10 @@ function formatPlacement(course: Lesson[] | null | undefined, motherTongue: stri
 - Stop after two misses in a row.
 ${items}
 - start_lesson = the number of the first item they missed (or ${course.length + 1} if they knew all of them).
-- If they knew all of them: ask 3 or 4 questions in ${target} using the ladder (steps 1 to 3) to see if they are A2, B1 or higher.
-- Then call set_level with cefr_band (Pre-A1 if start_lesson is 1 or 2; A1 if it's 3 or more; or higher from the questions), start_lesson, and a note saying which items they knew.`
+- If they say they've learned ${target} for a long time or speak it well, skip the phrases and go straight to the SPEAKING TEST.
+- If they knew all the phrases: run the SPEAKING TEST.
+${SPEAKING_TEST(target)}
+- Then call set_level with cefr_band (Pre-A1 if start_lesson is 1 or 2; A1 if it's 3 or more; or higher from the speaking test), start_lesson, and a note naming what they knew, what they did well and where they struggled.`
 }
 
 function formatLesson(plan: LessonPlan, motherTongue: string): string {
@@ -242,8 +258,11 @@ export function buildSystemPrompt(c: PromptContext): string {
 }
 
 /** Time cues. The model has no clock, so the app tells it when time is up. */
-export function levelCallWrapUpCue(): string {
-  return '(About 4 minutes have passed. Finish the level check now: call set_level, then tell them their level kindly and say goodbye.)'
+/** Level call time cues: a soft one (finish if sure) and a firm one. */
+export function levelCallWrapUpCue(firm: boolean): string {
+  return firm
+    ? '(About 10 minutes have passed. Finish the level check now: call set_level, then give your feedback and say goodbye.)'
+    : '(About 5 minutes have passed. If you are sure of their level, finish now. If they might be higher, test the next level up first, then finish.)'
 }
 
 export function walkWrapUpCue(minutes: number): string {
