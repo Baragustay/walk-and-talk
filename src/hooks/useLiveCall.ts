@@ -6,6 +6,7 @@ import {
   kickoffMessage,
   lessonKickoffMessage,
   levelCallWrapUpCue,
+  silenceNudge,
   walkWrapUpCue,
 } from '../lib/live/systemPrompt'
 import { completeLesson, courseFor, currentLesson, progressFromPlacement } from '../lib/course'
@@ -151,6 +152,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
         ? [SET_LEVEL, UPDATE_LEARNING_STYLE, HANG_UP]
         : [UPDATE_LEARNING_STYLE, HANG_UP, SAVE_WORD, MARK_RECALL, ...(lesson ? [COMPLETE_LESSON] : [])],
       onToolCall,
+      onSilence: (count) => silenceNudge(count, motherTongue),
       requestToken: async () => {
         if (!liveTokenUrl) throw new Error('Supabase is not configured')
         const auth = await accessToken()

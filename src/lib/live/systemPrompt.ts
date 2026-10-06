@@ -224,6 +224,20 @@ export function walkWrapUpCue(minutes: number): string {
   return `(${minutes} minutes have passed. Start wrapping up the walk warmly now.)`
 }
 
+/**
+ * The user has gone quiet after Buddy finished speaking. `count` is how many times in a row
+ * (1, 2, 3); null means stop nudging and keep waiting.
+ */
+export function silenceNudge(count: number, motherTongue: string): string | null {
+  if (count === 1)
+    return '(The user has been quiet for a while. Gently help: repeat your last question more simply and slowly, or give a small hint.)'
+  if (count === 2)
+    return `(Still quiet. Give them the answer or a phrase to copy, in ${motherTongue} and the target language, and ask them to say it after you.)`
+  if (count === 3)
+    return `(Still quiet. Ask warmly in ${motherTongue} if they are still there, and whether they want to keep going or stop for today. Do not hang up.)`
+  return null
+}
+
 /** Sent as the first turn so Buddy picks up and speaks first. */
 export function kickoffMessage(levelCall: boolean, motherTongue: string, learningStyle: string[] = []): string {
   // Repeating their wishes here makes the very first sentence follow them too.

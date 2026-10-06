@@ -3,7 +3,7 @@ import { GoogleGenAI, Modality, type FunctionDeclaration, type LiveServerMessage
 import type { BuddyState } from '../../components/Buddy/buddyImages'
 import { keepScreenOn, releaseScreen } from '../wakeLock'
 import { playHangup, playPickup, RING_CYCLE_S, startRinging } from './audio/callSounds'
-import { isAudioRunning, getAudioContext } from './audio/context'
+import { isAudioRunning, getAudioContext, resumeAudio } from './audio/context'
 import { MicError, startMic, type Mic } from './audio/mic'
 import { PcmPlayer } from './audio/player'
 import { LIVE_API_VERSION } from './model'
@@ -39,6 +39,8 @@ export interface LiveCallOptions {
   /** Runs Buddy's function calls; the returned object goes back to Buddy as the result. */
   onToolCall?: ToolHandler
   onChange: (s: CallSnapshot) => void
+  /** What to tell Buddy when the user stays quiet (1st, 2nd, 3rd time). null = say nothing. */
+  onSilence?: (count: number) => string | null
   /** Asks our token server for a Gemini token (the server checks the login). */
   requestToken: () => Promise<Response>
 }
@@ -81,6 +83,12 @@ export class LiveCall {
   private micChunks = 0
   private heartbeat: ReturnType<typeof setInterval> | null = null
   private ringing: { stop: () => void } | null = null
+  // Silence check-ins: seconds of quiet (after Buddy stops talking) before nudge 1, 2, 3
+  private static readonly SILENCE_AFTER_S = [10, 20, 30]
+  private quietSince = 0
+  private silenceNudges = 0
+  private silenceTimer: ReturnType<typeof setInterval> | null = null
+  private buddyHasSpoken = false
   private hangUpTimer: ReturnType<typeof setInterval> | null = null
   private lastAudioAt = 0
   private turnCompletedAt = 0
@@ -136,6 +144,7 @@ export class LiveCall {
     })
     this.set({ status: 'live', connectedAt: Date.now(), audioBlocked: !isAudioRunning() })
     this.debug('connected')
+    this.silenceTimer = setInterval(() => this.checkSilence(), 1000)
     this.heartbeat = setInterval(() => {
       // Peak is 0..32767. Under ~300 for 20 s means the mic is silent or cut off.
       this.debug(`mic: ${this.micChunks} chunks, loudest ${this.micPeak}${this.micChunks === 0 ? ' (NO AUDIO)' : ''}`)
@@ -192,7 +201,7 @@ export class LiveCall {
 
   /** Call from a tap if the browser blocked audio. */
   async unblockAudio() {
-    await getAudioContext().resume()
+    await resumeAudio()
     this.set({ audioBlocked: !isAudioRunning() })
   }
 
@@ -291,6 +300,7 @@ export class LiveCall {
     if (vaType) this.debug(vaType === 'ACTIVITY_START' ? 'you: speaking' : 'you: stopped')
     if (vaType === 'ACTIVITY_START') {
       this.userSpeaking = true
+      this.silenceNudges = 0 // they're back
       this.awaitingReplySince = null
       if (this.thinkingTimer) clearTimeout(this.thinkingTimer)
       this.closeBubble('buddy')
@@ -330,6 +340,7 @@ export class LiveCall {
       for (const part of sc.modelTurn?.parts ?? []) {
         if (part.inlineData?.data && part.inlineData.mimeType?.startsWith('audio/')) {
           this.turnHadAudio = true
+          this.buddyHasSpoken = true
           this.lastAudioAt = Date.now()
           this.replyOwed = false
           this.nudged = false
@@ -354,6 +365,26 @@ export class LiveCall {
   }
 
   // ---- Buddy state ------------------------------------------------------
+
+  /** Quiet = nobody talking, nothing pending. The clock starts when Buddy's audio has finished. */
+  private checkSilence() {
+    if (this.ending || this.hangUpTimer || this.snap.status !== 'live' || !this.buddyHasSpoken) return
+    const busy = this.player.playing || this.userSpeaking || this.awaitingReplySince !== null
+    if (busy) {
+      this.quietSince = 0
+      return
+    }
+    if (!this.quietSince) this.quietSince = Date.now()
+    const wait = LiveCall.SILENCE_AFTER_S[this.silenceNudges]
+    if (wait === undefined || Date.now() - this.quietSince < wait * 1000) return
+    const text = this.opts.onSilence?.(this.silenceNudges + 1)
+    this.silenceNudges++
+    this.quietSince = 0
+    if (!text) return
+    this.debug(`quiet, check-in ${this.silenceNudges}`)
+    this.session?.sendClientContent({ turns: [{ role: 'user', parts: [{ text }] }], turnComplete: true })
+    this.startThinking()
+  }
 
   private startThinking() {
     this.awaitingReplySince = Date.now()
@@ -444,6 +475,8 @@ export class LiveCall {
     this.ringing = null
     if (this.hangUpTimer) clearInterval(this.hangUpTimer)
     this.hangUpTimer = null
+    if (this.silenceTimer) clearInterval(this.silenceTimer)
+    this.silenceTimer = null
     this.mic?.stop()
     this.mic = null
     if (this.heartbeat) clearInterval(this.heartbeat)

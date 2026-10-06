@@ -1,7 +1,7 @@
 // Phone-call sounds made with oscillators, so there are no audio files. Kept soft on purpose.
-import { getAudioContext } from './context'
+import { getAudioContext, getVoiceOutput } from './context'
 
-const VOLUME = 0.07
+const VOLUME = 0.03 // goes through the voice boost (x2.5)
 
 /** One tone (or chord) with soft edges, so it never clicks or startles. */
 function tone(freqs: number[], start: number, duration: number, volume = VOLUME) {
@@ -11,7 +11,7 @@ function tone(freqs: number[], start: number, duration: number, volume = VOLUME)
   gain.gain.linearRampToValueAtTime(volume, start + 0.04)
   gain.gain.setValueAtTime(volume, start + duration - 0.06)
   gain.gain.linearRampToValueAtTime(0, start + duration)
-  gain.connect(ctx.destination)
+  gain.connect(getVoiceOutput())
   const oscs = freqs.map((f) => {
     const o = ctx.createOscillator()
     o.frequency.value = f
