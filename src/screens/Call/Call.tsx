@@ -10,6 +10,8 @@ import { levelLabel } from '../../lib/levels'
 import type { CallError } from '../../lib/live/liveCall'
 import { pathAfterOnboarding } from '../../state/auth'
 import { useCallDebug } from '../../state/debug'
+import { useCallSetup } from '../../state/callSetup'
+import { TOPICS } from '../../lib/topics'
 import { updateProfile, useProfile } from '../../state/profile'
 import styles from './Call.module.css'
 
@@ -47,6 +49,7 @@ export function Call() {
   const profile = useProfile()
   const call = useLiveCall(profile, isLevelCall)
   const showLog = useCallDebug()
+  const { topic } = useCallSetup()
   // Captured at the start, so finishing the lesson mid-call doesn't change the header.
   const [lessonTitle] = useState(() => {
     const l = isLevelCall ? null : currentLesson(profile)
@@ -148,7 +151,7 @@ export function Call() {
   return (
     <div className={styles.page}>
       <header className={styles.top}>
-        <p className={styles.meta}>{isLevelCall ? 'Level call' : (lessonTitle ?? 'Free talk')}</p>
+        <p className={styles.meta}>{isLevelCall ? 'Level call' : (lessonTitle ?? TOPICS.find((t) => t.id === topic)?.label ?? 'Free talk')}</p>
         <p className={styles.meta}>
           <span className="visually-hidden">Call time </span>
           <time>{formatTimer(seconds)}</time>

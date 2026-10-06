@@ -13,6 +13,10 @@ export function useCallSetup(): CallSetup {
   return useStore(store)
 }
 
+export function getCallSetup(): CallSetup {
+  return store.get()
+}
+
 export function setTopic(topic: Topic) {
   store.set((s) => ({ ...s, topic }))
 }

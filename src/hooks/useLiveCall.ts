@@ -23,10 +23,18 @@ import {
 } from '../lib/live/tools'
 import { liveTokenUrl, supabaseAnonKey } from '../lib/supabase'
 import { accessToken } from '../state/auth'
+import { TOPICS } from '../lib/topics'
+import { getCallSetup } from '../state/callSetup'
 import { getProfile, updateProfile } from '../state/profile'
 import { recordWalk, useWalks } from '../state/walks'
 import { dueWords, findWord, getWords, reviewWord, saveWord } from '../state/words'
 import type { Level, Profile, Word } from '../types'
+
+function topicNotes(topic: string): string {
+  if (topic === 'free') return 'Free talk. Follow whatever they want to talk about.'
+  const label = TOPICS.find((t) => t.id === topic)?.label ?? topic
+  return `They chose to talk about: ${label}. Start there, but follow them if they want to change.`
+}
 
 const SPEECH_LOCALE: Record<Profile['targetLanguage'], string> = { sv: 'sv-SE', es: 'es-ES', ja: 'ja-JP' }
 
@@ -67,7 +75,7 @@ export function useLiveCall(profile: Profile, isLevelCall: boolean) {
       // TODO(phase 2): real walk count and due words from Dexie. No fake words until then.
       walkCount: walks.length + 1,
       dueWords: isLevelCall ? [] : dueWords(getWords(profile.targetLanguage)).slice(0, 3),
-      topicNotes: 'Free talk. Follow whatever the user wants to talk about.',
+      topicNotes: topicNotes(getCallSetup().topic),
       walkMinutes: isLevelCall ? 5 : profile.walkMinutes,
       lesson,
       placementCourse: isLevelCall ? courseFor(profile.targetLanguage) : null,
