@@ -79,3 +79,19 @@
   text-align: center;
   font-size: var(--text-lg);
 }
+
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--tap);
+}
+.hello { font-size: var(--text-lg); font-weight: 700; }
+.me {
+  display: inline-flex;
+  min-width: var(--tap);
+  min-height: var(--tap);
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}

@@ -10,14 +10,23 @@ export type AuthState =
   | { status: 'loading' }
   | { status: 'none' } // no account yet (first visit)
   | { status: 'anonymous'; userId: string } // trying it out, not saved to a login yet
-  | { status: 'signedIn'; userId: string; email: string | null }
+  | { status: 'signedIn'; userId: string; email: string | null; name: string | null; avatarUrl: string | null }
 
 const store = createStore<AuthState>(supabase ? { status: 'loading' } : { status: 'disabled' })
 
 function fromSession(session: Session | null): AuthState {
   if (!session) return { status: 'none' }
   const u = session.user
-  return u.is_anonymous ? { status: 'anonymous', userId: u.id } : { status: 'signedIn', userId: u.id, email: u.email ?? null }
+  if (u.is_anonymous) return { status: 'anonymous', userId: u.id }
+  // Google puts the photo and name in user_metadata.
+  const meta = (u.user_metadata ?? {}) as Record<string, string | undefined>
+  return {
+    status: 'signedIn',
+    userId: u.id,
+    email: u.email ?? null,
+    name: meta.full_name || meta.name || null,
+    avatarUrl: meta.avatar_url || meta.picture || null,
+  }
 }
 
 /**

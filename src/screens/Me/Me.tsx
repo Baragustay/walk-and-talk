@@ -1,6 +1,8 @@
 import { Link } from 'react-router'
+import { Avatar } from '../../components/Avatar/Avatar'
 import { GearIcon } from '../../components/Icons'
 import { buddySrc } from '../../components/Buddy/buddyImages'
+import { useAuth } from '../../state/auth'
 import { useProfile } from '../../state/profile'
 import { useWalks, walkStats } from '../../state/walks'
 import { useWords } from '../../state/words'
@@ -8,6 +10,7 @@ import styles from './Me.module.css'
 
 export function Me() {
   const profile = useProfile()
+  const auth = useAuth()
   const words = useWords(profile.targetLanguage)
   const { walksThisWeek, minutesSpoken } = walkStats(useWalks())
   const STATS = [
@@ -25,6 +28,16 @@ export function Me() {
           <GearIcon />
         </Link>
       </header>
+
+      {auth.status === 'signedIn' && (
+        <section className={styles.who} aria-label="Your account">
+          <Avatar name={auth.name} email={auth.email} avatarUrl={auth.avatarUrl} size={56} />
+          <div>
+            <p className={styles.name}>{auth.name ?? auth.email ?? 'Signed in'}</p>
+            {auth.name && auth.email && <p className="soft">{auth.email}</p>}
+          </div>
+        </section>
+      )}
 
       <img src={buddySrc('buddy_hero_card_banner.png')} alt="" className={styles.banner} />
 

@@ -1,0 +1,15 @@
+.avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 2px solid var(--ink);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--surface);
+}
+.initial {
+  background: var(--bubble-user);
+  color: var(--ink);
+  font-weight: 800;
+}

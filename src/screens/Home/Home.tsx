@@ -1,12 +1,14 @@
 import { useId, useRef } from 'react'
 import { prepareAudio } from '../../lib/live/audio/context'
 import { Link, useNavigate } from 'react-router'
+import { Avatar } from '../../components/Avatar/Avatar'
 import { Buddy } from '../../components/Buddy/Buddy'
 import { CameraIcon, CloseIcon, PhoneIcon } from '../../components/Icons'
 import { currentLesson } from '../../lib/course'
 import { plural } from '../../lib/format'
 import { TOPICS } from '../../lib/topics'
 import { setPhoto, setTopic, useCallSetup } from '../../state/callSetup'
+import { useAuth } from '../../state/auth'
 import { useProfile } from '../../state/profile'
 import { dueWords, useWords } from '../../state/words'
 import styles from './Home.module.css'
@@ -14,6 +16,7 @@ import styles from './Home.module.css'
 export function Home() {
   const navigate = useNavigate()
   const profile = useProfile()
+  const auth = useAuth()
   const { topic, photo } = useCallSetup()
   const fileInput = useRef<HTMLInputElement>(null)
   const topicsLabel = useId()
@@ -23,6 +26,14 @@ export function Home() {
   return (
     <div className="screen">
       <h1 className="visually-hidden">Home</h1>
+      {auth.status === 'signedIn' && (
+        <header className={styles.top}>
+          <p className={styles.hello}>Hi{auth.name ? `, ${auth.name.split(' ')[0]}` : ''}!</p>
+          <Link to="/me" className={styles.me} aria-label={`Your profile${auth.email ? ` (${auth.email})` : ''}`}>
+            <Avatar name={auth.name} email={auth.email} avatarUrl={auth.avatarUrl} />
+          </Link>
+        </header>
+      )}
 
       <div className={styles.hero}>
         <Buddy state="idle" size={200} />

@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import { Buddy } from '../../components/Buddy/Buddy'
+import { GoogleIcon } from '../../components/GoogleIcon'
 import { BackIcon } from '../../components/Icons'
 import { continueWithEmail, continueWithGoogle, signInExisting, signOut, useAuth, useAuthError } from '../../state/auth'
 import { resetLocalProfile, useProfile } from '../../state/profile'
@@ -113,7 +114,8 @@ export function Account() {
             : 'Save your level, lessons and words, so they’re here next time, on any device.'}
       </p>
 
-      <button type="button" className="btn btn-block" onClick={google} disabled={busy}>
+      <button type="button" className={`btn btn-block ${styles.google}`} onClick={google} disabled={busy}>
+        <GoogleIcon />
         Continue with Google
       </button>
 
