@@ -12,6 +12,7 @@ import {
 } from '../lib/live/systemPrompt'
 import { completeLesson, courseFor, currentLesson, progressFromPlacement } from '../lib/course'
 import {
+  checkLevelEvidence,
   COMPLETE_LESSON,
   DRIVING_MODE,
   HANG_UP,
@@ -52,8 +53,8 @@ const INITIAL: CallSnapshot = {
 }
 
 // The model has no clock, so we tell it when to wrap up.
-const LEVEL_CUE_AT = 5 * 60 // seconds: "finish if you're sure"
-const LEVEL_CUE_AGAIN_AT = 10 * 60 // firm: advanced speakers need longer to test
+// Only a firm cue: a softer "finish if you're sure" made Buddy stop too early.
+const LEVEL_CUE_AT = 12 * 60 // seconds
 
 /** Starts a Live call when the screen mounts, hangs up when it unmounts. */
 export function useLiveCall(profile: Profile, mode: 'walk' | 'level' | 'review') {
@@ -94,6 +95,8 @@ export function useLiveCall(profile: Profile, mode: 'walk' | 'level' | 'review')
     const recorded = new Set<string>() // words already marked in this call
     const onToolCall: ToolHandler = (name, args) => {
       if (name === 'set_level') {
+        const missing = checkLevelEvidence(args)
+        if (missing) return { error: missing }
         const result = parseSetLevel(args)
         if (!result) return { error: 'cefr_band must be one of A1, A2, B1, B2, C1' }
         updateProfile({
@@ -247,8 +250,7 @@ export function useLiveCall(profile: Profile, mode: 'walk' | 'level' | 'review')
         c.sendNote(text)
       }
       if (isLevelCall) {
-        if (elapsed >= LEVEL_CUE_AT && !levelSet) once('level', levelCallWrapUpCue(false))
-        if (elapsed >= LEVEL_CUE_AGAIN_AT && !levelSet) once('level-again', levelCallWrapUpCue(true))
+        if (elapsed >= LEVEL_CUE_AT && !levelSet) once('level', levelCallWrapUpCue(true))
       } else if (elapsed >= profile.walkMinutes * 60) {
         once('walk', walkWrapUpCue(profile.walkMinutes))
       }

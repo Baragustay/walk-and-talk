@@ -174,7 +174,9 @@ const SPEAKING_TEST = (target: string) => `SPEAKING TEST (for anyone beyond the 
 - Judge the five CEFR qualities, not just whether they answered: range (vocabulary), accuracy (grammar), fluency (pace, few long pauses), interaction (follows and responds naturally), coherence (connected, organised speech).
 - Their level is the highest level where they handled the tasks comfortably on most of those qualities. If they handled C1 tasks with ease, say C1 (it's the top of our scale).
 - If they say they're advanced, start at B1 and go straight up. Never decide on a level you didn't test them at.
-- Take the time you need: a few minutes for beginners, up to 10 minutes for advanced speakers.`
+- Take the time you need: a few minutes for beginners, up to 10 minutes for advanced speakers.
+- When you call set_level, report highest_level_tested and struggled_there honestly. The app only accepts a level if you tested the level above it and they struggled there (C1 needs C1 tasks). If it refuses, do what it says, then try again.
+- Don't tell them the result until set_level has succeeded.`
 
 /** One key phrase per lesson, asked in order, to find where a learner should start. */
 function formatPlacement(course: Lesson[] | null | undefined, motherTongue: string, target: string): string {
@@ -287,7 +289,7 @@ export function buildSystemPrompt(c: PromptContext): string {
 /** Level call time cues: a soft one (finish if sure) and a firm one. */
 export function levelCallWrapUpCue(firm: boolean): string {
   return firm
-    ? '(About 10 minutes have passed. Finish the level check now: call set_level, then give your feedback and say goodbye.)'
+    ? '(About 12 minutes have passed. Finish the level check now: call set_level with your evidence, then give your feedback and say goodbye.)'
     : '(About 5 minutes have passed. If you are sure of their level, finish now. If they might be higher, test the next level up first, then finish.)'
 }
 

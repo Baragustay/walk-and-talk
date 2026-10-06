@@ -19,13 +19,22 @@ export const SET_LEVEL: FunctionDeclaration = {
         type: Type.STRING,
         description: 'One short sentence on what they can and cannot do yet, in English.',
       },
+      highest_level_tested: {
+        type: Type.STRING,
+        enum: ['none', 'A2', 'B1', 'B2', 'C1'],
+        description: "The hardest SPEAKING TEST level you gave them tasks at. 'none' if you only did the beginner phrases.",
+      },
+      struggled_there: {
+        type: Type.BOOLEAN,
+        description: 'Did they clearly struggle with the tasks at highest_level_tested?',
+      },
       start_lesson: {
         type: Type.INTEGER,
         description:
           'From the placement test: the number of the first item they missed (1 if they missed the first). Use 1 if there was no placement test.',
       },
     },
-    required: ['cefr_band', 'note', 'start_lesson'],
+    required: ['cefr_band', 'note', 'start_lesson', 'highest_level_tested', 'struggled_there'],
   },
 }
 
@@ -115,6 +124,36 @@ export function parseLearningStyle(args: Record<string, unknown> | undefined): s
     .map((p) => String(p).trim().slice(0, 160))
     .filter(Boolean)
     .slice(0, MAX_STYLE_ITEMS)
+}
+
+const TEST_ORDER = ['A2', 'B1', 'B2', 'C1']
+const TASKS: Record<string, string> = {
+  B1: 'tell a story from their past in detail; explain plans and the reasons for them',
+  B2: 'argue for an opinion with pros and cons; speculate about causes or consequences',
+  C1: 'an abstract topic, a hypothetical ("what would you do if..."), rephrasing an idea another way',
+}
+
+/**
+ * A level is only accepted with evidence: for anything from A2 up, Buddy must have tested the
+ * level above and seen them struggle there (C1 needs C1 tasks). Returns an instruction for Buddy
+ * if the evidence is missing, or null if the level can be saved.
+ */
+export function checkLevelEvidence(args: Record<string, unknown> | undefined): string | null {
+  const band = String(args?.cefr_band ?? '').toUpperCase()
+  if (band === 'PRE-A1' || band === 'A1') return null // beginners: placement phrases are enough
+  const tested = String(args?.highest_level_tested ?? 'none').toUpperCase()
+  const struggled = Boolean(args?.struggled_there)
+  const bandIdx = TEST_ORDER.indexOf(band)
+  const testedIdx = TEST_ORDER.indexOf(tested)
+  if (band === 'C1') {
+    return tested === 'C1' ? null : `Not saved yet. Before C1, give them C1 tasks: ${TASKS.C1}.`
+  }
+  const next = TEST_ORDER[bandIdx + 1]
+  if (testedIdx < bandIdx + 1) return `Not saved yet. Before ${band}, give them ${next} tasks (${TASKS[next]}) and see how they do.`
+  if (testedIdx === bandIdx + 1 && !struggled) {
+    return `Not saved yet. They handled ${next} tasks, so their level is at least ${next}. Test the next level up before deciding.`
+  }
+  return null
 }
 
 const BANDS: Record<string, Level> = { 'PRE-A1': 'preA1', A1: 'A1', A2: 'A2', B1: 'B1', B2: 'B2', C1: 'C1' }
