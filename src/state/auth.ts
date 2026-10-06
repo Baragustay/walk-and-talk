@@ -88,7 +88,7 @@ export async function signOut() {
 
 /** Deletes the account on the server (profile, walks and words go with it). */
 export async function deleteAccount() {
-  if (!supabase || store.get().status === 'none') return
+  if (!supabase || !(await supabase.auth.getSession()).data.session) return
   const { error } = await supabase.rpc('delete_my_account')
   if (error) throw error
   await supabase.auth.signOut()

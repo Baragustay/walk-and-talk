@@ -8,6 +8,7 @@ import { levelLabel } from '../../lib/levels'
 import { MAX_STYLE_ITEMS } from '../../lib/live/tools'
 import { setCallDebug, useCallDebug } from '../../state/debug'
 import { deleteAccount, signOut, useAuth } from '../../state/auth'
+import { startFresh } from '../../state/reset'
 import { resetLocalProfile, updateProfile, useProfile } from '../../state/profile'
 import type { TargetLanguage } from '../../types'
 import styles from './Settings.module.css'
@@ -224,6 +225,17 @@ export function Settings() {
             onChange={(e) => setCallDebug(e.target.checked)}
           />
         </label>
+        <button
+          type="button"
+          className="btn"
+          onClick={async () => {
+            await startFresh()
+            navigate('/welcome', { replace: true })
+          }}
+        >
+          Start over as a new user
+        </button>
+        <p className="soft">Signs you out and runs the first-time experience again. Your saved account stays.</p>
       </section>
 
       <section className={styles.group} aria-labelledby="data-title">
